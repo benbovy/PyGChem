@@ -6,7 +6,7 @@ GEOS-Chem Model, a global 3-D chemical transport model (CTM)
 for atmospheric composition.
 
 The project is currently at an early stage of development. 
-This version is already usable, although many features have still to be
+This version is already usable, although many features still have to be
 implemented. The first release will provide:
 -   An object oriented library and a collection of routines (Python package)
     for model setup and parameterization (e.g., the global chemistry 

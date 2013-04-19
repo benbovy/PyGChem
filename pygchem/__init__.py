@@ -12,12 +12,14 @@ for input/output manipulation, visualizing, pre and post-processing.
 pygchem is written by Benoît Bovy (bbovy at ulg.ac.be).
 Code written by Gerrit Kuhlmann is also included in this package.
 :copyright: Copyright 2013 by Benoît Bovy.
-:license: GPL, see LICENSE for details.
+:license: GPLv3, see LICENSE for details.
 
 """
 
 __all__ = ["globchem", "diagnostics", "io", "utils", ]
-__version__ = (0, 0, 1)
+__version__ = '0.1.0'
+__license__ = __doc__
+__project_url__ = 'https://github.com/benbovy/PyGChem'
 
 # Check python version
 import sys

@@ -1,0 +1,77 @@
+*********************************************************************
+* KINETIC REACTIONS LETTERED FLAGS EXPLANATION (GEOS-Chem v9-01-03)
+*********************************************************************
+*
+* Description of specific kinectic reactions included in the Geos-Chem 
+* global chemical mechanism.
+*
+* Each description starts with the line "FLAG <letter>" and ends with 
+* the line "END FLAG".
+* 
+* Parameters that will be replaced by their correspondent value are
+* delimited with brackets {}
+*
+* File parsed by read_chem.py
+*
+
+
+FLAG P
+Pressure-dependent 3-body reaction
+
+	Falloff curve parameter:
+		constant: FCVT = {FCVT}
+		or temperature dependent 1 param:  FCVT = exp(-T/{FCT1T})
+		or temperature dependent 2 params: FCVT = exp(-T/{FCT1T})+exp(-{FCT1T}/T)
+
+	reaction rates:
+		Low  pressure limit (LPL) coef: K(0,T)   = {AR0} * (300/T) * {BR0} * exp({CR0}/T)
+		High pressure limit (HPL) coef: K(inf,T) = {AR1} * (300/T) * {BR1} * exp({CR1}/T)
+		
+		Note:
+		LPL, 3-body reaction, rate prop. to K(0,T)[M]
+		HPL, 2-body reaction, rate prop. to K(inf,T)  
+END FLAG
+
+
+FLAG E
+Reverse equilibrium reaction
+
+	rate:
+		K(T) = Kf / ({AR} exp({CR}/T)
+		
+		Kf (reaction rate in the reverse direction):
+		LPL  = {AR0} * (300/T) * {BR0} * exp({CR0}/T)
+		HPL  = {AR1} * (300/T) * {BR1} * exp({CR1}/T)
+END FLAG
+
+
+FLAG X
+OH + HNO3 reaction
+
+	rate:
+		K = K0 + K3[M] / (1 + K3[M]/K2)
+		K0 = {AR0} exp({CR0}/T) 
+		K2 = {AR1} exp({CR1}/T) 
+		K3 = {AR2} exp({CR2}/T)
+END FLAG
+
+
+FLAG Y
+OH + CO reaction
+
+	rate:
+		K = {AR0} * (300/T) * {BR0} * exp({CR0}/T) * (1 + 0.6 * Patm)
+END FLAG
+
+
+FLAG Z
+HO2 + HO2 reaction
+
+	rate:
+		K = (K1 + K2) * (1 + 1.4E-21 * [H2O] * exp(2200/T))
+		K1 = {AR0} * (300/T) * {BR0} * exp({CR0}/T)
+		K2 = {AR1} * (300/T) * {BR1} * exp({CR1}/T) [M]
+END FLAG
+
+
+

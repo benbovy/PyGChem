@@ -1,0 +1,578 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# Application globchem
+# part of pygchem (Python interface for GEOS-Chem Chemistry Transport Model)
+#
+# Copyright (C) 2013 Benoit Bovy
+# see license.txt for more details
+#
+# Last modification: 03/2013
+
+"""
+A Qt widget to explore the global chemistry mechanism defined in the file
+globchem.dat.
+
+"""
+
+import argparse
+import os
+import sys
+import inspect
+import itertools
+
+from PyQt4 import QtCore, QtGui
+
+from matplotlib.collections import LineCollection
+from matplotlib.collections import PathCollection
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg
+import matplotlib.pyplot as plt
+import networkx as nx
+
+sys.path.append("/home/bovy/code_projects/python_geoschem/PyGChem")
+sys.path.append("/home/benbovy/code_projects/python_geoschem/PyGChem")
+import pygchem.globchem as gl
+
+
+class CRNetwork(nx.Graph):
+    """
+    Class for handling Chemical Reaction Networks (CRN).
+    """
+    def __init__(self, globchem):
+        """
+        Initialize a Chemical Reaction Networks (CRN) given a
+        :class:`Globchem` object (see the pygchem.glochem module).
+        """
+        self.globchem = globchem
+
+        super(CRNetwork, self).__init__()
+
+        self.add_nodes_from(globchem.species.keys())
+        self.compute_CRN_edges()
+
+    def compute_CRN_edges(self, rtype='kinetic'):
+        """
+        Compute edges of the CRN (= list of species id pairs) and add edge
+        attribute 'reac_obj' (= a list globchem.Reaction objects for which
+        the first element of species pair is in reactants and 2nd element is
+        in products).
+        """
+        if rtype == 'kinetic':
+            reactions = self.globchem.reac_kn.values()
+        elif rtype == 'photolysis':
+            reactions = self.globchem.reac_ph.values()
+
+        spairs = list()
+        spairs_reac = list()
+        for r in reactions:
+            for pair in itertools.product(r.reactants, r.products):
+                if pair not in spairs:
+                    spairs.append(pair)
+                    spairs_reac.append([r])
+                else:
+                    spairs_reac[spairs.index(pair)].append(r)
+
+        edges = list()
+        for s, r in zip(spairs, spairs_reac):
+            edges.append((s[0], s[1], {'reac_obj': r}))
+
+        self.add_edges_from(edges)
+
+
+class CRNFigure(FigureCanvasQTAgg):
+    """
+    Matplotlib canvas which hosts the Chemical Reaction Network.
+    """
+    def __init__(self, parent=None):
+        """
+        Init empty canvas.
+        """
+        self.crn = None
+        self.iconsole = None
+
+        self.fig = plt.figure(facecolor='#888888')
+        self.ax = self.fig.add_subplot(111)
+        self.fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.01)
+        self.ax.axis('off')
+        FigureCanvasQTAgg.__init__(self, self.fig)
+        self.setParent(parent)
+        FigureCanvasQTAgg.setSizePolicy(self,
+                                        QtGui.QSizePolicy.Expanding,
+                                        QtGui.QSizePolicy.Expanding)
+        FigureCanvasQTAgg.updateGeometry(self)
+
+    def connect_iconsole(self, iconsole):
+        """
+        Connect the canvas instance to an info console (iconsole must be a
+        :class:`InfoConsole` instance).
+        """
+        if isinstance(iconsole, InfoConsole):
+            self.iconsole = iconsole
+
+    def view_CRN(self, crn, clear=True):
+        """
+        Visualize the Chemical Reaction Network given a :class:`CRNetwork`
+        object (crn).
+        """
+        if clear:
+            self.ax.clear()
+            self.ax.axis('off')
+
+        self.crn = crn
+        self.glayout = nx.pydot_layout(self.crn, prog="neato", root=None)
+
+        # networkx/matplotlib 1+ issue:
+        # remove the following line (in nx_pylab.py)
+        # pylab.sci(node_collection)   (bad, no other workaround ?)
+        self.ve = nx.draw_networkx_edges(self.crn, self.glayout, ax=self.ax,
+                                         edge_color="#BBBBBB",
+                                         alpha=0.5, picker=5)
+        self.vn = nx.draw_networkx_nodes(self.crn, self.glayout,  ax=self.ax,
+                                         node_size=2e3, node_shape='8',
+                                         node_color="#DDDDDD", alpha=0.5)
+        self.lb = nx.draw_networkx_labels(self.crn,  ax=self.ax,
+                                          pos=self.glayout, font_size=8)
+
+        self.vn.set_picker(5)
+
+        self.draw()
+        self.show()
+
+        self.mpl_connect('pick_event', self.on_pick)
+
+    def colorize_species(self, spec_id, focus=True):
+        """
+        Colorize selected species and its neighbours (nodes and edges).
+        If focus is True, pan the canvas to the selected species.
+        """
+        self.cnodes = self.crn.neighbors(spec_id)
+        self.cedges = self.crn.edges(spec_id)
+        self.creac = [ce[2]['reac_obj'] for ce in
+                      self.crn.edges(spec_id, data=True)]
+        # case of directed graph (but issue with edges matplotlib coll:
+        # "arrows" not removed)
+        #cnodes = self.crn.predecessors(spec_id) + \
+        #            self.crn.successors(spec_id)
+        #cedges = self.crn.in_edges(spec_id) + self.crn.out_edges(spec_id)
+
+        try:
+            self.vss.remove()
+            self.vnn.remove()
+            self.vne.remove()
+            self.vse.remove()
+        except (ValueError, NameError, AttributeError):
+            pass
+
+        self.draw()
+
+        if len(self.cnodes) > 0:
+            self.vnn = nx.draw_networkx_nodes(self.crn, ax=self.ax,
+                                              pos=self.glayout,
+                                              nodelist=self.cnodes,
+                                              node_size=2e3, node_shape='8',
+                                              node_color="orange", alpha=0.5)
+            self.vne = nx.draw_networkx_edges(self.crn, ax=self.ax,
+                                              pos=self.glayout,
+                                              edgelist=self.cedges)
+            self.vne.set_picker(3)
+
+        self.vss = nx.draw_networkx_nodes(self.crn, ax=self.ax,
+                                          pos=self.glayout,
+                                          nodelist=[spec_id],
+                                          node_size=2e3, node_shape='8',
+                                          node_color="royalblue", alpha=0.7)
+
+        if focus:
+            focus_pos = self.glayout.values()[self.crn.nodes().index(spec_id)]
+            xlim = self.ax.get_xlim()
+            x_range = xlim[1] - xlim[0]
+            ylim = self.ax.get_ylim()
+            y_range = ylim[1] - ylim[0]
+            new_xlim = (focus_pos[0] - x_range / 2.,
+                        focus_pos[0] + x_range / 2.)
+            self.ax.set_xlim(new_xlim)
+            new_ylim = (focus_pos[1] - y_range / 2.,
+                        focus_pos[1] + y_range / 2.)
+            self.ax.set_ylim(new_ylim)
+
+        self.draw()
+
+        # append info to iconsole
+        spec_obj = self.crn.globchem.species[spec_id]
+        self.iconsole.append_sep()
+        self.iconsole.show_species_info(spec_obj)
+
+    def colorize_reaction(self, edge_id):
+        """
+        Colorize selected reaction(s) (a CRN edge).
+        """
+        try:
+            self.vse.remove()
+        except (ValueError, NameError, AttributeError):
+            pass
+
+        self.draw()
+
+        self.vse = nx.draw_networkx_edges(self.crn, ax=self.ax,
+                                          pos=self.glayout,
+                                          edge_color="red",
+                                          edgelist=[edge_id])
+
+        self.draw()
+
+    def on_pick(self, event):
+        """
+        Action on click.
+        """
+        clicked_index = event.ind[0]
+
+        if isinstance(event.artist, PathCollection):
+            try:
+                spec_id = self.crn.nodes()[clicked_index]
+            except IndexError:
+                return False
+            self.colorize_species(spec_id, focus=False)
+
+        elif isinstance(event.artist, LineCollection):
+            try:
+                clicked_reac = self.creac[clicked_index]
+            except IndexError:
+                return False
+            self.colorize_reaction(self.cedges[clicked_index])
+            self.iconsole.append_sep()
+            for r in clicked_reac:
+                self.iconsole.show_reaction_info(r)
+
+
+class SpeciesList(QtGui.QListWidget):
+    """
+    Clickable list of chemical species.
+    """
+
+    def __init__(self, parent=None, slist=[], fcanvas=None):
+        """
+        Initialize the container, add species id from slist and connect to the
+        Network figure (fcanvas, if None a new instance is created).
+        """
+        super(SpeciesList, self).__init__(parent)
+        if len(slist) > 0:
+            self.update_list(slist)
+        if fcanvas is None:
+            fcanvas = CRNFigure()
+        self.fcanvas = fcanvas
+
+        self.sbar = self.verticalScrollBar()
+
+        self.show()
+        self.itemClicked.connect(self.onclick)
+        self.itemChanged.connect(self.scroll2top)
+
+    def scroll2top(self):
+        """
+        Scroll the list to top.
+        """
+        self.sbar.setValue(0)
+
+    def connect_CRNFigure(self, fcanvas):
+        """
+        Connect the species list to the CRN figure (fcanvas must be a
+        :class:`CRNFigure` instance).
+        """
+        if isinstance(fcanvas, CRNFigure):
+            self.fcanvas = fcanvas
+
+    def update_list(self, slist, clear=True):
+        """
+        update the list of chemical species with elements of slist.
+        If clear is True, all existing species are removed before updating.
+        """
+        if clear:
+            self.clear()
+            self.scrollToTop()
+        for s in slist:
+            self.addItem(QtGui.QListWidgetItem(s))
+
+    def onclick(self, item):
+        """
+        Action when clicking on a species id:
+        calls :class:`CRNFigure`.colorize_species().
+        """
+        self.fcanvas.colorize_species(str(item.text().toUtf8()))
+
+
+class InfoConsole(QtGui.QTextEdit):
+    """
+    Text output to show info about clicked species or reactions.
+    """
+
+    def __init__(self, parent=None):
+        """
+        Initialize the console.
+        """
+        super(InfoConsole, self).__init__(parent)
+
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.sbar = self.verticalScrollBar()
+        self.textChanged.connect(self.scroll2bottom)
+
+    def scroll2bottom(self):
+        """
+        Scroll the console to bottom.
+        """
+        self.sbar.setValue(self.sbar.maximum())
+
+    def append_line(self, linetxt, newline=False, tab=0):
+        """
+        Append a text line, and tab times '\t' before
+        the text.
+        """
+        if newline:
+            nl = "\n"
+        else:
+            nl = ""
+        self.append("".join("\t" for i in xrange(0, tab)) + linetxt + nl)
+
+    def append_sep(self, char="-", length=200, color='#999999'):
+        """
+        Append a separator line of length times char.
+        """
+        self.append("<font color='%s'>" % color +
+                    "".join(char for i in xrange(0,length)) +
+                    "</font>")
+
+    def show_species_info(self, spec):
+        """
+        Show info about species (spec is a globchem.Species instance).
+        """
+        if not isinstance(spec, gl.Species):
+            raise ValueError("spec is not an instance of globchem.Species")
+
+        spec_info = spec.to_dict()
+        if spec_info['formula'] != "":
+            spec_info['formula'] = "[ %s ]" % spec_info['formula']
+
+        self.append_line("<font color='#0000FF'>species <b>%(id)s</b></font>:"
+                         " %(name)s &nbsp;&nbsp;"
+                         "<font color='#555555'>%(formula)s</font>"
+                            % spec_info)
+
+    def show_reaction_info(self, reac):
+        """
+        Show info about reaction (reac is a globchem.Reaction instance).
+        """
+        if not isinstance(reac, gl.Reaction):
+            raise ValueError("reac is not an instance of globchem.Reaction")
+
+        reac_info = reac.to_dict()
+        if reac_info['flag'] != "":
+            reac_info['flag'] = "[ flag %s ]" % reac_info['flag']
+        reac_info['format'] = reac.format()
+
+        self.append_line("<font color='#FF0000'>reaction <b>%(id)d</b></font>:"
+                         " %(format)s &nbsp;&nbsp;"
+                         "<font color='#555555'>%(flag)s</font>"
+                            % reac_info)
+
+
+class WidgetWindow(object):
+    """
+    Widget's window.
+    """
+
+    def setup_ui(self, main_window, icon_path=None):
+        """
+        Set window propeties
+        """
+
+        # main window and central widget
+        main_window.setObjectName("main_window")
+        main_window.resize(850, 600)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding,
+                                       QtGui.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(1)
+        sizePolicy.setHeightForWidth(
+                                main_window.sizePolicy().hasHeightForWidth())
+        main_window.setSizePolicy(sizePolicy)
+        main_window.setMinimumSize(QtCore.QSize(850, 0))
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(icon_path),
+                       QtGui.QIcon.Normal,
+                       QtGui.QIcon.On)
+        main_window.setWindowIcon(icon)
+
+        self.central_widget = QtGui.QWidget(main_window)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding,
+                                       QtGui.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(1)
+        sizePolicy.setHeightForWidth(
+                        self.central_widget.sizePolicy().hasHeightForWidth())
+        self.central_widget.setSizePolicy(sizePolicy)
+        self.central_widget.setObjectName("central_widget")
+
+        self.central_layout = QtGui.QVBoxLayout(self.central_widget)
+        self.central_layout.setSizeConstraint(QtGui.QLayout.SetDefaultConstraint)
+        self.central_layout.setObjectName("central_layout")
+
+        # horizontal splitter pane (between vertical splitter and info pane)
+        self.h_splitter = QtGui.QSplitter(self.central_widget)
+        self.h_splitter.setEnabled(True)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred,
+                                       QtGui.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(
+                            self.h_splitter.sizePolicy().hasHeightForWidth())
+        self.h_splitter.setSizePolicy(sizePolicy)
+        self.h_splitter.setMinimumSize(QtCore.QSize(0, 0))
+        self.h_splitter.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.h_splitter.setAutoFillBackground(False)
+        self.h_splitter.setOrientation(QtCore.Qt.Vertical)
+        self.h_splitter.setHandleWidth(6)
+        self.h_splitter.setObjectName("h_splitter")
+        self.h_splitter.setSizes([400, 200])
+
+        # vertical splitter pane (between graph pane and species list pane)
+        self.v_splitter = QtGui.QSplitter(self.h_splitter)
+        self.v_splitter.setEnabled(True)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred,
+                                       QtGui.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(
+                             self.v_splitter.sizePolicy().hasHeightForWidth())
+        self.v_splitter.setSizePolicy(sizePolicy)
+        self.v_splitter.setMinimumSize(QtCore.QSize(0, 0))
+        self.v_splitter.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.v_splitter.setAutoFillBackground(False)
+        self.v_splitter.setOrientation(QtCore.Qt.Horizontal)
+        self.v_splitter.setHandleWidth(6)
+        self.v_splitter.setObjectName("v_splitter")
+        self.v_splitter.setSizes([700, 150])
+
+        # graph pane
+        self.graph_pane = CRNFigure(self.v_splitter)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding,
+                                       QtGui.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(1)
+        sizePolicy.setHeightForWidth(
+                             self.graph_pane.sizePolicy().hasHeightForWidth())
+        self.graph_pane.setSizePolicy(sizePolicy)
+        self.graph_pane.setMinimumSize(QtCore.QSize(700, 0))
+        self.graph_pane.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        self.graph_pane.setBaseSize(QtCore.QSize(700, 0))
+        self.graph_pane.setObjectName("graphPane")
+
+        # species list pane
+        self.species_pane = QtGui.QWidget(self.v_splitter)
+        self.species_pane.setObjectName("species_pane")
+        self.species_pane.setContentsMargins(0, 0, 0, 0)
+        self.species_layout = QtGui.QVBoxLayout(self.species_pane)
+        self.species_layout.setSizeConstraint(QtGui.QLayout.SetMinimumSize)
+        self.species_layout.setContentsMargins(0, 0, 0, 0)
+        self.species_layout.setObjectName("species_layout")
+
+        self.species_label = QtGui.QLabel(self.species_pane)
+        self.species_label.setTextFormat(QtCore.Qt.PlainText)
+        self.species_label.setIndent(0)
+        self.species_label.setObjectName("species_label")
+        self.species_layout.addWidget(self.species_label)
+
+        self.species_list = SpeciesList(parent=self.species_pane,
+                                        fcanvas=self.graph_pane)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred,
+                                       QtGui.QSizePolicy.Expanding)
+        sizePolicy.setHeightForWidth(
+                          self.species_list.sizePolicy().hasHeightForWidth())
+        self.species_list.setSizePolicy(sizePolicy)
+        self.species_list.setObjectName("species_list")
+        self.species_layout.addWidget(self.species_list)
+
+        # info pane (contains info console + buttons reaction rate)
+        self.info_pane = QtGui.QWidget(self.h_splitter)
+        self.info_pane.setObjectName("info_pane")
+        self.info_pane.setContentsMargins(0, 0, 0, 0)
+        self.info_layout = QtGui.QHBoxLayout(self.info_pane)
+        self.info_layout.setSizeConstraint(QtGui.QLayout.SetMinimumSize)
+        self.info_layout.setContentsMargins(0, 0, 0, 0)
+        self.info_layout.setObjectName("info_layout")
+
+        # info console
+        self.info_console = InfoConsole(self.info_pane)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding,
+                                       QtGui.QSizePolicy.Expanding)
+        sizePolicy.setHeightForWidth(
+                          self.info_console.sizePolicy().hasHeightForWidth())
+        self.info_console.setSizePolicy(sizePolicy)
+        self.info_console.setMinimumSize(QtCore.QSize(100, 100))
+        self.info_console.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        self.info_console.setBaseSize(QtCore.QSize(400, 100))
+        self.info_console.setReadOnly(True)
+        self.info_console.setObjectName("info_console")
+        self.info_layout.addWidget(self.info_console)
+
+        self.graph_pane.connect_iconsole(self.info_console)
+
+        # add panes
+        self.central_layout.addWidget(self.h_splitter)
+        main_window.setCentralWidget(self.central_widget)
+
+        # statusbar
+        self.status_bar = QtGui.QStatusBar(main_window)
+        self.status_bar.setObjectName("status_bar")
+        main_window.setStatusBar(self.status_bar)
+
+        # toolbar matplotlib
+        self.toolbar = NavigationToolbar2QTAgg(self.graph_pane, main_window)
+        self.toolbar.setObjectName("toolbar")
+        main_window.addToolBar(QtCore.Qt.TopToolBarArea, self.toolbar)
+        main_window.insertToolBarBreak(self.toolbar)
+
+        self.retranslate_ui(main_window)
+        QtCore.QMetaObject.connectSlotsByName(main_window)
+
+    def retranslate_ui(self, main_window):
+        main_window.setWindowTitle(
+            QtGui.QApplication.translate("main_window",
+                                         "Globchem CRN",
+                                         None, QtGui.QApplication.UnicodeUTF8))
+        self.species_label.setText(
+            QtGui.QApplication.translate("main_window",
+                                         "Species",
+                                         None, QtGui.QApplication.UnicodeUTF8))
+
+if __name__ == "__main__":
+
+    # change dir to get icon file
+    this_script = inspect.getframeinfo(inspect.currentframe()).filename
+    script_path = os.path.dirname(os.path.abspath(this_script))
+    icon_path = os.path.abspath(os.path.join(script_path, os.pardir,
+                                             "icons", "scalable",
+                                             "pygchem.svg"))
+
+    parser = argparse.ArgumentParser(description='A Qt widget to explore the '
+                                     'global chemistry mechanism defined in '
+                                     'the file globchem.dat.')
+
+    ws = "/home/data/GEOS-Chem/GEOS-Chem-rundirs/4x5/geos5/standard/"
+    #ws = "/home/data/03_geo/geoschem/GEOS-Chem-rundirs/4x5/geos5/standard/"
+    #ws = "/home/data/03_geo/geoschem/GEOS-Chem-rundirs/dicarbonyls"
+    fn_globchem = os.path.join(ws, "globchem.dat")
+    gc = gl.Globchem.from_smvgear2(fn_globchem)
+    gc_crn = CRNetwork(gc)
+
+    # init app
+    app = QtGui.QApplication(sys.argv)
+    main_window = QtGui.QMainWindow()
+    ui = WidgetWindow()
+    ui.setup_ui(main_window, icon_path=icon_path)
+
+    ui.species_list.update_list(sorted(gc.species.keys()))
+    ui.graph_pane.view_CRN(gc_crn)
+
+    main_window.show()
+    sys.exit(app.exec_())
+

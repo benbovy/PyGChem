@@ -1,0 +1,97 @@
+Species    Formula                         Note (GEOS-Chem v9-01-03)
+A3O2       CH3CH2CH2OO                     primary RO2 from C3H8
+ACET       CH3C(O)CH3                      acetone
+ACTA       CH3C(O)OH                       acetic acid
+ALD2       CH3CHO                          acetaldehyde
+ALK4       RH                              ≥C4 alkanes
+ATO2       CH3C(O)CH2O2                    RO2 from acetone
+B3O2       CH3CH(OO)CH3                    secondary RO2 from C3H8
+C2H6       C2H6                            ethane
+C3H8       C3H8                            propane
+CH2O       CH2O                            formaldehyde
+CH4        CH4                             methane
+CO         CO                              carbon monoxide
+CO2        CO2                             carbon dioxide
+DRYDEP                                     generic entry for dry deposition
+EMISSION                                   generic entry to do emissions
+EOH        C2H5OH                          ethanol
+ETO2       CH3CH2OO                        ethylperoxy radical
+ETP        CH3CH2OOH                       ethylhydroperoxide
+GLYC       HOCH2CHO                        glycoaldehyde (hydroxyacetaldehyde)
+GLYX       CHOCHO                          glyoxal
+H2         H2                              hydrogen atom
+H2O        H2O                             water vapor
+H2O2       H2O2                            hydrogen peroxide
+HAC        HOCH2C(O)CH3                    hydroxyacetone
+HCOOH      HCOOH                           formic acid
+HNO2       HONO                            nitrous acid
+HNO3       HNO3                            nitric acid
+HNO4       HNO4                            pernitric acid
+HO2        HO2                             hydroperoxyl radical
+IALD       HOCH2C(CH3)=CHCHO               hydroxy carbonyl alkenes from isoprene
+IAP        HOCH2C(CH3)(OOH)CH(OH)CHO       peroxide from IAO2
+INO2       O2NOCH2C(OO)(CH3)CH=CH2         RO2 from ISOP+NO3
+INPN       O2NOCH2C(OOH)(CH3)CH=CH2        peroxide from INO2
+ISN2       CH2=C(CH3)CH(ONO2)CH2OH         isoprene nitrtate
+ISNO3      RONO2                           stable organic nitrate
+ISNP       HOCH2C(OOH)(CH3)CH(ONO2)CH2OH   peroxide from ISOPNBO2 and ISOPNDO2
+ISOP       CH2=C(CH3)CH=CH2                isoprene
+KO2        RO2 from >3 ketones             RO2 from >3 ketones
+M                                          for three body reactions
+MACR       CH2=C(CH3)CHO                   methacrolein
+MAN2       HOCH2C(ONO2)(CH3)CHO            RO2 from MACR+NO3
+MAO3       CH2=C(CH3)C(O)OO                peroxyacyl from MVK and MACR
+MAOP       CH2=C(CH3)C(O)OOH               peroxide from MAO3
+MAP        CH3C(O)OOH                      peroxyacetic acid
+MCO3       CH3C(O)OO                       peroxyacetyl radical
+MEK        RC(O)R                          >3 ketones
+MGLY       CH3COCHO                        methylglyoxyal
+MNO3       CH3ONO2                         methylnitrate
+MO2        CH3O2                           methylperoxy radical
+MOH        CH3OH                           methanol
+MP         CH3OOH                          methylhydroperoxide
+MRO2       HOCH2C(OO)(CH3)CHO              RO2 from MACR+OH
+MRP        HOCH2C(OOH)(CH3)CHO             peroxide from MRO2
+MVK        CH2=CHC(O)CH3                   methylvinylketone
+N2         N2                              nitrogen
+N2O        N2O                             nitrous oxide
+N2O5       N2O5                            dinitrogen pentoxide
+NH2        NH2                             ammonia radical
+NH3        NH3                             ammonia
+NO         NO                              nitric oxide
+NO2        NO2                             nitrogen dioxide
+NO3        NO3                             nitrate radical
+O          O                               oxygen atom (3P)
+O1D        O1D                             oxygen atom (1D)
+O2         O2                              molecular oxygen
+O2CH2OH    O2CH2OH                         produced by CH2O+HO2
+O3         O3                              ozone
+OH         OH                              hydroxyl radical
+PAN        CH3C(O)OONO2                    peroxyacetylnitrate
+PMN        CH2=C(CH3)C(O)OONO2             peroxymethacryloyl nitrate (MPAN)
+PO2        HOCH2CH(OO)CH3                  RO2 from isoprene
+PP         HOCH2CH(OOH)CH3                 peroxide from PO2
+PPN        CH3CH2C(O)OONO2                 peroxypropionylnitrate
+PRN1       O2NOCH2CH(OO)CH3                RO2 from propene + NO3
+PRPE       C3H6                            ≥C4 alkenes
+PRPN       O2NOCH2CH(OOH)CH3               peroxide from PRN1
+R4N1       RO2 from R4N2                   RO2 from R4N2
+R4N2       RO2NO                           ≥C4 alkylnitrates
+R4O2       RO2 from ALK4                   RO2 from ALK4
+R4P        CH3CH2CH2CH2OOH                 peroxide from R4O2
+RA3P       CH3CH2CH2OOH                    peroxide from A3O2
+RB3P       CH3CH(OOH)CH3                   peroxide from B3O2
+RCHO       CH3CH2CHO                       >C2 aldehydes
+RCO3       CH3CH2C(O)OO                    peroxypropionyl radical
+RCOOH      C2H5C(O)OH                      >C2 organic acids
+RIO1       HOCH2C(OO)(CH3)CH=CHOH          RO2 from isoprene oxidation products
+RIO2       HOCH2C(OO)(CH3)CH=CH2           RO2 from isoprene
+RIP        HOCH2C(OOH)(CH3)CH=CH2          peroxide from RIO2
+ROH        C3H7OH                          >C2 alcohols
+RP         CH3CH2C(O)OOH                   peroxide from RCO3
+VRO2       HOCH2CH(OO)C(O)CH3              RO2 from MVK+OH
+VRP        HOCH2CH(OOH)C(O)CH3             peroxide from VRO2
+DMS        (CH3)2S                         dimethylsulfide
+SO2        SO2                             sulfur dioxide
+SO4        SO4                             sulfate radical
+MSA        CH4SO3                          methanesulfonic acid

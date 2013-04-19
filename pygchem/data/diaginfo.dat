@@ -1,0 +1,207 @@
+#==============================================================================
+# GAMAP v2-16 (30 Jan 2012)  Contact: geos-chem-support@as.harvard.edu
+#
+# "diaginfo.dat": This file contains category names and the offsets under
+# which they are stored in file "tracerinfo.dat".  This file is read into
+# GAMAP by routine "ctm_diaginfo.pro".
+#
+#
+# File Format:
+# -----------------------------------------------------------------------------
+# OFFSET    (I8 )  Constant to add to tracer numbers in order to distinguish
+#                  for the given diagnostic category, as stored in file
+#                  "tracerinfo.dat".  OFFSET may be up to 8 digits long.
+#  --       (1X )  1-character spacer    
+# CATEGORY  (A40)  Category name for CTM diagnostics.  NOTE: The category name 
+#                  can be up to 40 chars long, but historically the GEOS-CHEM
+#                  and GISS models have used an 8-character category name.  
+#  --       (1X )  Spacer    
+# COMMENT   (A  )  Descriptive comment string
+#
+#
+# Notes:
+# ------
+# (1) Comment lines (beginning with '#') will not be read by ctm_diaginfo.pro.
+# (2) Added dust diagnostic information (bmy, 2/20/04)
+# (3) Added extra diagnostics from GEOS-CHEM v6-02-05 (bmy, 6/4/04)
+# (4) Added MODIS and AVHRR categories (bmy, 2/22/10)
+# (5) Added GFED3-BB dry matter category (bmy, 1/30/12)
+#
+##### SPACING BETWEEN DIAGNOSTIC CATEGORY OFFSETS = 100
+#==============================================================================
+#
+#OFFSET]x[CATEGORY                              ]x[DESCRIPTIVE COMMENT
+       0 IJ-AVG-$                                 Tracer concentration
+       0 IJ-24H-$                                 24-hr avg tracer conc.
+       0 IJ-INS-$                                 Instantaneous tracer
+       0 INST-MAP                                 Instantaneous tracer
+       0 500-AVRG                                 500 hPa Tracer 
+     100 ANTHSRCE                                 Anthropogenic emissions
+     100 BIOBSRCE                                 Biomass emissions
+     100 BIOFSRCE                                 Biofuel emissions
+     100 NOX-AC-$                                 Aircraft NOx
+     100 NOX-BIOB                                 Biomass NOx
+     100 NOX-BIOF                                 Biofuel NOx
+     100 NOX-LI-$                                 Lightning NOx
+     100 NOX-SOIL                                 Soil NOx
+     100 NOX-FERT                                 Fertilizer NOx
+     100 NOX-STRT                                 Stratopsheric NOx
+     100 NOX-AN-$                                 Anthropogenic NOx
+     200 CH3ISRCE                                 CH3I emissions
+     200 CV-FLX-$                                 Convective mass flux
+     200 TURBMC-$                                 PBL mixing mass flux
+     200 EW-FLX-$                                 E/W transport flux
+     200 NS-FLX-$                                 N/S transport flux
+     200 UP-FLX-$                                 Up/down transport flux
+     200 STRT-FLX                                 Flux from stratosphere
+     200 RN--SRCE                                 Rn-Pb-Be source
+     200 RN-DECAY                                 Rn-Pb-Be loss
+     200 WETDCV-$                                 Conv wet scavenging
+     200 WETDLS-$                                 Wet deposition
+     300 INST-COL                                 Inst. columns in DU
+     400 DMS-BIOG                                 Biogenic DMS
+     400 DUSTSRCE                                 Dust emission
+     400 NVOCSRCE                                 NVOC emissions
+     400 SALTSRCE                                 Seasalt emission
+     400 SO2-AC-$                                 Aircraft SO2 emissions
+     400 SO2-AN-$                                 Anthro SO2 emissions
+     400 SO2-BIOB                                 Biomass SO2 emissions
+     400 SO2-BIOF                                 Biofuel SO2 emissions
+     400 SO2-EV-$                                 Erup. Volcano SO2 
+     400 SO2-NV-$                                 Non-Erup. Volcano SO2
+     400 SO2-SHIP                                 SO2 from ship exhaust
+     400 SOX-SHIP                                 SOX from ship exhaust
+     400 SO4-AN-$                                 Anthro SO4 emissions
+     400 SO4-BIOF                                 Biofuel SO4 emissions
+     400 NH3-ANTH                                 Anthro NH3 emissions
+     400 NH3-NATU                                 Natural NH3 emissions
+     400 NH3-BIOB                                 Biomass NH3 emissions
+     400 NH3-BIOF                                 Biofuel NH3 emissions
+     400 TROPO-AV                                 Trop avg'd tracer
+     400 TCMASS-$                                 Tracer mass (kg)
+     400 POP-ANTH                                 Anthro POP emissions
+     500 GFED2-BB                                 GFED2 biomass emissions
+     700 JV-MAP-$                                 J-Values
+     800 LANDMAP                                  Land type map
+     900 PRESS-AV                                 GISS Surface Pressure
+     900 PS-PTOP                                  GEOS PS - PTOP
+    1000 CHEM-L=$                                 Chemical Prod/Loss
+    1200 TIME-SER                                 ND48 timeseries stations
+    1300 DAO-FLDS                                 GMAO 2-D met fields
+    1400 OD-MAP-$                                 Optical Depths
+    1700 DAO-3D-$                                 GMAO 3-D met fields
+    1800 CO--SRCE                                 CO Source diagnostic
+    2000 BXHGHT-$                                 Boxheight, airmass, etc
+    2000 MLD                                      Mixed layer depth           
+    2100 DXYP                                     Surface area
+    2200 PORL-L=$                                 ND65 P/L family diagnostics
+    2500 TOMS-O3                                  TOMS O3 columns in DU
+    2500 O3COLMAP                                 O3 in Dobson Units
+    2500 O3CLIM-$                                 O3 in Dobson Units
+    2700 TR-PAUSE                                 Annual mean tropopause
+    2800 PBLDEPTH                                 Afternoon PBL height
+    2900 GLOB-NPP                                 Net primary productivity
+    2900 GLOB-NEP                                 NEP
+    3200 ARSL-L=$                                 GEOS-CHEM Aerosol input
+    3500 PNOY-L=$                                 P(NOy) for GEOS-CHEM B.C.
+    3600 COLMAP                                   Quantity in dobson units
+    3700 UVALBEDO                                 UV Albedo
+    3800 WD-FRC-$                                 Wet dep fraction
+    3900 WD-LSR-$                                 Large-scale rainout
+    3900 WD-CVR-$                                 Convective rainout
+    3900 WD-LSW-$                                 Large-scale washout
+    3900 WD-CVW-$                                 Convective washout
+    4000 MC-FRC-$                                 Moist conv fraction
+    4100 MDUST-$                                  GEOS-CHEM mineral dust
+    4200 SOILPREC                                 Soil precip file
+    4400 DOC-SRCE                                 DOC emissions (for CH3I)
+    4500 COBUDGET                                 bnd CO-OH budget
+    4600 CH4BUDGT                                 jsw CH4 budget
+    4700 BIOGSRCE                                 Biogenic emissions
+    4800 EMISACET                                 Acetone emissions
+    4800 ACETSRCE                                 Acetone emissions
+    4900 EMDIS-BL                                 Emissions in PBL
+    5000 CROPLAND                                 Cropland map
+    5100 HET-RESP                                 Het-resp for acetone
+    5200 CO2-SRCE                                 CO2 emissions
+    5300 CH4-EMIS                                 CH4 emissions 
+    5300 CH4-SRCE                                 CH4 emissions 
+    5400 SCALFOSS                                 Fossil fuel scale factors
+    5400 EMISFAC
+    5500 MOPAVG-$                                 MOPITT data
+    5600 PL-SUL=$                                 P/L of sulfur species
+    5700 KRBUDGET                                 Kr85 budget
+    5800 GMI-GISS                                 GISS model -- GMI netCDF
+    5800 GMI-GMAO                                 GMAO model -- GMI netCDF
+    5800 GMI-NCAR                                 NCAR model -- GMI netCDF
+    5900 GMAO-2D                                  GMAO 2-D met fields
+    6000 GMAO-3D$                                 GMAO 3-D met fields
+    6100 BC-ANTH                                  Anthro BC emission
+    6100 BC-BIOB                                  Biomass BC emission   
+    6100 BC-BIOF                                  Biofuel BC emission
+    6100 OC-ANTH                                  Anthro OC emission
+    6100 OC-BIOB                                  Biomass OC emission
+    6100 OC-BIOF                                  Biofuel OC emission
+    6100 OC-BIOG                                  Biogenic LOC emission
+    6100 PL-BC=$                                  H-philic from H-phobic BC
+    6100 PL-OC=$                                  H-philic from H-phobic OC
+    6100 SALT-SR$                                 Sea salt emission
+    6100 BLKC-SR$                                 Black carbon emission
+    6100 ORGC-SR$                                 Organic Carbon emission
+    6200 DEAD-2D                                  DEAD model dust fields
+    6300 MODAVG-$                                 MODIS fields
+    6400 HG-SRCE                                  Hg emissions 
+    6500 PL-HG2-$                                 Prod / loss of Hg2
+    6700 MH-EMIS
+    6700 CH3BR-SR                                 CH3BrX source
+    6700 CH3BRSNK                                 CH3BrX sink
+    6800 COARDS-$                                 netCDF COARDS files
+    6900 AVHRR                                    AVHRR LAI
+    7100 DRYD-FLX                                 Drydep fluxes
+    7200 DRYD-VEL                                 Drydep velocities
+    7300 FUTURE-E                                 Future emissions
+    7400 OTD-REG                                  OTD/LIS Lightning redist
+    7400 OTD-LOC                                  Local scaling lightn redist
+    7500 EDGAR-2D                                 EDGAR emissions
+    7500 RATIO-2D                                 Emissions factors (from AVM)
+    7600 PEDGE-$                                  Pressure edges
+    7700 MODIS                                    MODIS LAI
+    7700 AVHRR                                    AVHRR LAI
+    8000 GFED3-BB                                 GFED3 biomass burning
+#==============================================================================
+# Really old diagnostic category names from the GISS-II model (bmy, 11/17/03)
+# Keep here for backwards compatibility w/ old ASCII punch files.
+#==============================================================================
+       0 SRF-AVRG                                                   
+       0 HZ$-AVRG                                      
+       0 NRTH-SLP                                     
+       0 WET CONV                                       
+       0 DRY CONV                                   
+       0 PROD-AVG  
+       0 LOSS-AVG  
+     100 NOX-SRCE                                 GISS MAXTRACER=39
+     500 UVW-MEAN                                 GISS MAXTRACER=3
+     600 UVW-EXTR                                 GISS MAXTRACER=3
+    1000 CHEMDIAG                                        
+    2000 BXHT-L=$                                        
+    2300 AIRD-L=$                                       
+    3000 LAND MAP                                         
+    3000 ICE-LAND                                         
+    3000 OCN-TEMP                                     
+    3000 OICE/WAT                                            
+    3000 OICELAY2                                   
+    3000 OICESNOW                                      
+    3000 EARTSNOW                                        
+    3000 OICET-L1                                            
+    3000 EARTT-L1                                  
+    3000 EARTW-L1   
+    3000 EICE--L1  
+    3000 OICET-L2  
+    3000 LICESNOW  
+    3000 LICET-L1  
+    3000 LICET-L2  
+    3000 W-CAP-L1  
+    3000 W-CAP-L2  
+    3000 L=1-L=2-  
+    3100 DEEPCONV                                       
+    9900 IJ-EMS-$                                 Emissions and scaliings

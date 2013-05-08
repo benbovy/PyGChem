@@ -559,11 +559,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='A Qt widget to explore the '
                                      'global chemistry mechanism defined in '
                                      'the file globchem.dat.')
-
-    ws = "/Volumes/data/03_geo/geoschem/GEOS-Chem-rundirs/4x5/geos5/standard"
-    #ws = "/home/data/03_geo/geoschem/GEOS-Chem-rundirs/4x5/geos5/standard/"
-    #ws = "/home/data/03_geo/geoschem/GEOS-Chem-rundirs/dicarbonyls"
-    fn_globchem = os.path.join(ws, "globchem.dat")
+    parser.add_argument("-f", "--file",
+                        help="name or path to the globchem file (if no file is"
+                             " given, a default file is used)")
+    args = parser.parse_args()
+    
+    fn_globchem = args.file
+    if fn_globchem is None or not os.path.exists(fn_globchem):
+        print ("no globchem file provided, or file does not exist. "
+               "a default globchem file is used")
+        fn_globchem = os.path.join(script_path, "data", "globchem.dat")
     gc = gl.Globchem.from_smvgear2(fn_globchem)
     gc_crn = CRNetwork(gc)
 

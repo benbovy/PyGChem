@@ -30,6 +30,8 @@ import pprint
 import warnings
 import math
 
+import numpy as np
+
 from pygchem.utils.custom_decorators import mixedmethod, classproperty
 import pygchem.utils.error_handling
 import pygchem.io.globchem as iogc
@@ -280,7 +282,7 @@ class Species(object):
 
 class ReactionRate(object):
     """
-    Class related to the rate coefficient(s) of one or several chemical
+    Class related to the rate constants(s) of one or several chemical
     reactions.
     """
 
@@ -291,7 +293,7 @@ class ReactionRate(object):
         Parameters
         ----------
         ratef : callable
-            callable that should return the reaction rate coefficient(s). 
+            callable that should return the reaction rate constant(s). 
             Could be either a built-in function or a
             user-supplied function. 
             Arguments of the function should be the variables
@@ -316,7 +318,7 @@ class ReactionRate(object):
         """
         Return a dictionary with correspondence between a reaction flag and
         the built-in function (or its name) that should be used to calculate
-        the rate coefficients.
+        the rate constants.
         
         Parameters
         ----------
@@ -352,7 +354,7 @@ class ReactionRate(object):
     def get_ratef_fromflag(cls, flag):
         """
         Return the built-in function that should be used to calculate
-        the rate coefficients, given the reaction flag (empty flag is valid).
+        the rate constants, given the reaction flag (empty flag is valid).
         """
         try:
             return cls.builtin_info()[flag]
@@ -362,7 +364,7 @@ class ReactionRate(object):
 
     def get_ratek(self, *args):
         """
-        Calculate the rate coefficient with the function (ratef) assigned to
+        Calculate the rate constant with the function (ratef) assigned to
         the :class:`ReactionRate` object.
         
         *args are the arguments required by the ratef function (temperature and
@@ -374,7 +376,7 @@ class ReactionRate(object):
     @classmethod
     def arr_ratek(cls, T, arr=[0., 0., 0.]):
         """
-        Calculate the rate coefficient with the following "generic" formula
+        Calculate the rate constant with the following "generic" formula
         (re-arranged from the modified Arrhenius equation):
         
         K(T) = A * (300 / T)^B * exp(C / T)
@@ -384,21 +386,21 @@ class ReactionRate(object):
         T : float
             temperature [K]
         arr : list of 3 floats
-            parameters [A,B,C] of the rate coefficient expression
+            parameters [A,B,C] of the rate constant expression
         """
-        return arr[0] * (300 / T) ** arr[1] * math.exp(arr[2] / T)
+        return arr[0] * (300 / T) ** arr[1] * np.exp(arr[2] / T)
 
     @classmethod
     def p_ratek(cls, T, cM, arrlow=[0., 0., 0.], arrhigh=[0., 0., 0.],
                 falloff=[0., 0., 0.]):
         """
-        Calculate the rate coefficient for pressure dependent 3-body reaction
+        Calculate the rate constant for pressure dependent 3-body reaction
         (falloff reaction).
         
         Falloff reaction: rate that first-order in [M] at low pressure 
         (three-body reaction), but becomes zero-order in [M] as [M] increases.
         
-        The rate coefficient is given by:
+        The rate constant is given by:
         K(T, P_r) = K_Inf * (P_r / (1 + P_r)) * F(T, P_r)
         with
         P_r = K_0 * [M] / K_Inf
@@ -452,13 +454,13 @@ class ReactionRate(object):
     def e_ratek(cls, T, cM, arr=[0., 0., 0.], arrlow=[0., 0., 0.],
                 arrhigh=[0., 0., 0.], falloff=[0., 0., 0.]):
         """
-        Calculate the rate coefficient of thermally dissociating species
+        Calculate the rate constant of thermally dissociating species
         (reverse equilibrium reactions).
         
-        The rate coefficient is given by:
+        The rate constant is given by:
         K(T, K_f) = K_f / (A * exp(C / T))
         where
-        K_f is the rate coefficient of the reaction in reverse direction
+        K_f is the rate constant of the reaction in reverse direction
         (this reaction must be pressure dependent, i.e., K_f must be
         returned by p_ratek)
         
@@ -488,9 +490,9 @@ class ReactionRate(object):
     def x_ratek(cls, T, cM, arrK0=[0., 0., 0.], arrK2=[0., 0., 0.],
                 arrK3=[0., 0., 0.]):
         """
-        Calculate the rate coefficient for OH + HNO3 reaction.
+        Calculate the rate constant for OH + HNO3 reaction.
         
-        The rate coefficient is given by:
+        The rate constant is given by:
         K(T, [M]) = K_0 + K_3 * [M] / (1 + K_3 * [M] / K_2)
         with
         K_0 = A0 * exp(C0 / T)
@@ -504,12 +506,12 @@ class ReactionRate(object):
         cM : float
             concentration of M  [TODO: units ? molec/cm3 ?]
         arrK0 : list of 3 floats
-            parameters [A0,B0,C0] of the rate coefficient expression K_0 (see 
+            parameters [A0,B0,C0] of the rate constant expression K_0 (see 
             arr_ratek). B0 should always be equal to 0.
         arrK2 : list of 3 floats
-            parameters [A2,B2,C2] of the rate coefficient expression K_2...
+            parameters [A2,B2,C2] of the rate constant expression K_2...
         arrK3 : list of 3 floats
-            parameters [A3,B3,C3] of the rate coefficient expression K_3...
+            parameters [A3,B3,C3] of the rate constant expression K_3...
         """
         K0 = cls.arr_ratek(T, arrK0)
         K2 = cls.arr_ratek(T, arrK2)
@@ -519,9 +521,9 @@ class ReactionRate(object):
     @classmethod
     def y_ratek(cls, T, Patm, arrK0=[0., 0., 0.]):
         """
-        Calculate the rate coefficient for OH + CO reaction.
+        Calculate the rate constant for OH + CO reaction.
         
-        The rate coefficient is given by:
+        The rate constant is given by:
         K(T, Patm) = K_0 * (1 + 0.6 * Patm)
         where
         K_0 = A
@@ -533,10 +535,10 @@ class ReactionRate(object):
         Patm : float
             air pressure [atm]
         arrK0 : list of 3 floats
-            parameters [A,B,C] of the rate coefficient expression K_0 (see 
+            parameters [A,B,C] of the rate constant expression K_0 (see 
             arr_ratek). B and C should always be equal to 0.
         
-        TODO: new OH + CO rate coefficient from JPL2006 implemented in 
+        TODO: new OH + CO rate constant from JPL2006 implemented in 
         calcrate.f
         """
         return cls.arr_ratek(T, arrK0) * (1. + 0.6 * Patm)
@@ -544,10 +546,10 @@ class ReactionRate(object):
     @classmethod
     def z_ratek(cls, T, cM, cH2O, arrK1=[0., 0., 0.], arrK2=[0., 0., 0.]):
         """
-        Calculate the rate coefficient for HO2/NO3 + HO2 reaction.
+        Calculate the rate constant for HO2/NO3 + HO2 reaction.
         (dependence on water vapor)
         
-        The rate coefficient is given by:
+        The rate constant is given by:
         K(T, [M], [H2O]) =   (K_1 + K_2 * [M]) 
                            * (1 + 1.4e-21 * [H2O] * exp(2200 / T)
         where
@@ -563,10 +565,10 @@ class ReactionRate(object):
         cH2O : float
             concentration of H2O  [TODO: units ? molec/cm3 ?]
         arrK1 : list of 3 floats
-            parameters [A1,B1,C1] of the rate coefficient expression K_1 (see 
+            parameters [A1,B1,C1] of the rate constant expression K_1 (see 
             arr_ratek). B1 should always be equal to 0.
         arrK2 : list of 3 floats
-            parameters [A2,B2,C2] of the rate coefficient expression K_2....
+            parameters [A2,B2,C2] of the rate constant expression K_2....
         """
         K1 = cls.arr_ratek(T, arrK1)
         K2 = cls.arr_ratek(T, arrK2)
@@ -575,10 +577,10 @@ class ReactionRate(object):
     @classmethod
     def a_ratek(cls, T, cM, arrK1=[0., 0., 0.], xcarbon=0.):
         """
-        Calculate the rate coefficient for reaction with addition branch
+        Calculate the rate constant for reaction with addition branch
         of RO2 + NO (forming organic nitrate)
         
-        The rate coefficient is given by:
+        The rate constant is given by:
         K(T, [M]) = K_1 * NY
         where
         K_1 = arr_ratek(T, arrK1)
@@ -591,7 +593,7 @@ class ReactionRate(object):
         cM : float
             concentration of M  [TODO: units ? molec/cm3 ?]
         arrK1 : list of 3 floats
-            parameters [A,B,C] of the rate coefficient expression K_1 (see 
+            parameters [A,B,C] of the rate constant expression K_1 (see 
             arr_ratek).
         xcarbon : float
             number of C atoms in RO2
@@ -603,10 +605,10 @@ class ReactionRate(object):
     @classmethod
     def b_ratek(cls, T, cM, arrK1=[0., 0., 0.], xcarbon=0):
         """
-        Calculate the rate coefficient for reaction with abstraction branch
+        Calculate the rate constant for reaction with abstraction branch
         of RO2 + NO (forming RO + NO2)
         
-        The rate coefficient is given by:
+        The rate constant is given by:
         K(T, M) = K_1 * (1 - NY)
         where
         K_1 = arr_ratek(T, arrK1)
@@ -619,7 +621,7 @@ class ReactionRate(object):
         cM : float
             concentration of M  [TODO: units ? molec/cm3 ?]
         arrK1 : list of 3 floats
-            parameters [A,B,C] of the rate coefficient expression K_1 (see 
+            parameters [A,B,C] of the rate constant expression K_1 (see 
             arr_ratek).
         xcarbon : int
             number of C atoms in RO2
@@ -631,10 +633,10 @@ class ReactionRate(object):
     @classmethod
     def c_ratek(cls, T, cO2, arrK1):
         """
-        Calculate the rate coefficient for reaction with branch of 
+        Calculate the rate constant for reaction with branch of 
         GLYX + OH/NO3 forming HO2 + 2 * CO
         
-        The rate coefficient is given by:
+        The rate constant is given by:
         K(T, [O2]) = K_1 * ([O2] + 3.5e18) / (2 * [O2] + 3.5e18)
         where
         K_1 is given by arr_ratek
@@ -646,7 +648,7 @@ class ReactionRate(object):
         cO2 : float
             concentration of O2  [TODO: units ? molec/cm3 ?]
         arrK1 : list of 3 floats
-            parameters [A,B,C] of the rate coefficient expression K_1 (see 
+            parameters [A,B,C] of the rate constant expression K_1 (see 
             arr_ratek)
         """
         K1 = cls.arr_ratek(T, arrK1)
@@ -655,10 +657,10 @@ class ReactionRate(object):
     @classmethod
     def d_ratek(cls, T, c02, arrK1):
         """
-        Calculate the rate coefficient for reaction with branch of
+        Calculate the rate constant for reaction with branch of
         GLYX + OH/NO3 forming GLCO3
         
-        The rate coefficient is given by:
+        The rate constant is given by:
         K(T, [O2]) = K_1 * [O2] / (2 * [O2] + 3.5e18)
         where
         K_1 is given by arr_ratek
@@ -670,7 +672,7 @@ class ReactionRate(object):
         cO2 : float
             concentration of O2  [TODO: units ? molec/cm3 ?]
         arrK1 : list of 3 floats
-            parameters [A,B,C] of the rate coefficient expression K_1 (see 
+            parameters [A,B,C] of the rate constant expression K_1 (see 
             arr_ratek)
         """
         K1 = cls.arr_ratek(T, arrK1)
@@ -686,10 +688,10 @@ class ReactionRate(object):
     @classmethod
     def v_ratek(cls, T, arrK1, arrK2):
         """
-        Calculate the rate coefficient for reaction with temperature
+        Calculate the rate constant for reaction with temperature
         dependent branching ratio (e.g., MCO3 + MO2).
         
-        The rate coefficient is given by:
+        The rate constant is given by:
         K(T) = K_1 / (1 + K_2)
         where
         K_1 and K_2 are given by arr_ratek
@@ -701,9 +703,9 @@ class ReactionRate(object):
     @classmethod
     def g_ratek(cls, T, cO2, arrK1, arrK2):
         """
-        Calculate the rate coefficient for reaction DMS + OH + O2.
+        Calculate the rate constant for reaction DMS + OH + O2.
         
-        The rate coefficient is given by:
+        The rate constant is given by:
         K(T) = K_1 / (1 + K_2 * [O2])
         where
         K_1 and K_2 are given by arr_ratek
@@ -715,10 +717,10 @@ class ReactionRate(object):
         cO2 : float
             concentration of O2  [TODO: units ? molec/cm3 ?]
         arrK1 : list of 3 floats
-            parameters [A,B,C] of the rate coefficient expression K_1 (see 
+            parameters [A,B,C] of the rate constant expression K_1 (see 
             arr_ratek)
         arrK2 : list of 3 floats
-            parameters [A2,B2,C2] of the rate coefficient expression K_2....
+            parameters [A2,B2,C2] of the rate constant expression K_2....
         """
         K1 = cls.arr_ratek(T, arrK1)
         K2 = cls.arr_ratek(T, arrK2)
@@ -1449,8 +1451,8 @@ class Globchem(object):
         rtype : 'kinetic' or 'photolysis'
             type of the reactions to wich filter is applied
         getid : bool
-            if True, return a list of species ids.
-            Otherwise, return a list of Species objects.
+            if True, return a list of reaction ids.
+            Otherwise, return a list of Reaction objects.
         
         Examples
         --------

@@ -7,7 +7,7 @@ Created on Thu Apr 11 14:50:17 2013
 
 import os
 import sys
-sys.path.append("/home/bovy/code_projects/python_geoschem/PyGChem")
+#sys.path.append("/home/bovy/code_projects/python_geoschem/PyGChem")
 import pygchem.diagnostics as gdiag
 import datetime
 
@@ -27,11 +27,11 @@ db = gdiag.DataBlock(1, 'EW-FLX-$', (dstart, dend),
 db2 = gdiag.DataBlock(2, 'EW-FLX-$', (dstart, dend), name='testtracer')
 
 
-ws = "/home/data/GEOS-Chem/GEOS-Chem-rundirs/4x5/geos5/standard"
+ws = "/Volumes/data/03_geo/geoschem/GEOS-Chem-rundirs/4x5/geos5/standard"
 bpch_fname = "ctm.bpch"
 
 ctm = gdiag.CTMFile.fromfile(os.path.join(ws, bpch_fname))
 
 #ctm.save(os.path.join(ws, "test.bpch"), overwrite=True)
 
-ctm2 = gdiag.CTMFile.fromfile(os.path.join(ws, "test.bpch"))
+#ctm2 = gdiag.CTMFile.fromfile(os.path.join(ws, "test.bpch"))

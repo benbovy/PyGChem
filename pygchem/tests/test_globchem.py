@@ -7,14 +7,14 @@ Created on Mon Oct  8 18:01:16 2012
 
 import os
 import sys
-sys.path.append("/home/bovy/code_projects/python_geoschem/PyGChem")
+#sys.path.append("/home/bovy/code_projects/python_geoschem/PyGChem")
 import pygchem.globchem as gl
 import pygchem.io.globchem as iogl
 
 import cProfile
 
 
-ws = "/home/data/GEOS-Chem/GEOS-Chem-rundirs/4x5/geos5/standard/"
+ws = "/Volumes/data/03_geo/geoschem/GEOS-Chem-rundirs/4x5/geos5/standard"
 fn_globchem = os.path.join(ws, "globchem.dat")
 
 # test io.globchem.read_globchem_dat

@@ -6,8 +6,8 @@ GEOS-Chem Model, a global 3-D chemical transport model (CTM)
 for atmospheric composition.
 
 The project is currently at an early stage of development. 
-This version is already usable, although many features still have to be
-implemented. The first release will provide:
+This version is already usable (alpha stage), although many features still have
+to be implemented. The first release will provide:
 -   An object oriented library and a collection of routines (Python package)
     for model setup and parameterization (e.g., the global chemistry 
     mechanism), for I/O operations, and for processing/plotting outputs
@@ -16,7 +16,7 @@ implemented. The first release will provide:
     related to GEOS-Chem simulations ;
 -   Several GUI elements (Qt widgets) for common visualizations and
     animations ;
--   A customized GEOS-Chem Shell (using IPython or bash) to setup/run 
+-   A customized GEOS-Chem Shell (using IPython) to setup/run 
     simulations and perform post-processing/plotting tasks.
 
 
@@ -28,13 +28,14 @@ Requirements:
 -   Numpy 1.5 or higher
 -   Matplotlib 1.0 or higher
 -   Basemap extension for matplotlib
+-   FortranFormat (will be included in the project)
 
-Optional modules:
+Optional modules (Widgets, Shell...):
 -   IPython
--   PyQt4 4.4+
+-   PySide (PyQt4 not supported yet)
 -   NetworkX
 
-We recommend the installation of a scientific python distribution:
+We highly recommend the installation of a scientific python distribution:
 -   Python XY (Windows): <http://code.google.com/p/pythonxy/>
 -   Enthought Canopy or EPD (Multi-platform, free academic license): 
     <https://www.enthought.com/>
@@ -58,6 +59,10 @@ Documentation
 
 Full documentation with examples and illustrations is not available yet,
 but Python classes and routines are well documented in the code (docstrings).
+
+Basic Examples can be found in the "pygchem/tests" folder (files with the
+'example_' prefix).
+Small Python applications (widgets) can be found in the "apps" folder. 
 
 
 License

@@ -999,6 +999,9 @@ class Reaction(object):
         fmt += " + ".join(["%1.3f %s" % cre for cre in
                            zip(self.coefs, self.products)])
         return fmt
+    
+    def __str__(self):
+        return self.format()
 
 
 class KineticReaction(Reaction):

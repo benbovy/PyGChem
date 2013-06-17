@@ -1,5 +1,6 @@
 # temp folder(s)
 pygchem/temp/
+temp/
 
 # C extensions
 *.so

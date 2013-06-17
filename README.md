@@ -44,12 +44,12 @@ We highly recommend the installation of a scientific python distribution:
 Installation
 ------------
 
--   Download the code from github as zip archive [1][2], unzip and cd into
-    'PyGChem-x-y-z'
+-   Download the code from github as zip archive [1], unzip and cd into
+    the new directory [2]
 -   Run 'python setup.py install' to install 'PyGChem'.
   
 
-[1] <https://github.com/benbovy/PyGChem>
+[1] <https://github.com/benbovy/PyGChem> 
 [2] You can also use the 'git' software with the following command:
     ```git clone https://github.com/benbovy/PyGChem.git```
 

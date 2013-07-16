@@ -9,8 +9,9 @@
 # Last modification: 11/2012
 
 """
-Module for miscellaneous routines or utilities
+Sub-package providing miscellaneous routines for various, non-scientific
+ purposes (e.g., binary or text formats, numpy add-ons...).
 """
 
 __all__ = ["custom_decorators", "check_tools", "error_handling",
-           "fixedformat", "fortranformat", "uff"]
+           "fixedformat", "fortranformat", "uff", "numpy_addon",]

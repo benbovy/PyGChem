@@ -19,8 +19,6 @@ This module provides an interface to model grids (met-fields, CTM,
 emissions...) used by GEOS-Chem. It contains default grid
 set-up for various models. User-specific grids can also be defined.
 
-TODO: re-gridding tools ?
-
 Examples
 --------
 TODO:
@@ -32,7 +30,7 @@ import itertools
 
 import numpy as np
 
-from pygchem import atmtools
+from pygchem.tools import atm
 from pygchem.utils.custom_decorators import classproperty
 from pygchem.utils.numpy_addon import broadcast_1d_array
 
@@ -990,7 +988,7 @@ class CTMGrid(object):
             grid types.
         altitude_edges, altitude_centers : Return altitudes for both
             grid types.
-        mod_altitudes (module atmtools.profiles) : Return altitude
+        mod_altitudes (:mod:pygchem.tools.`atm`) : Return altitude
             for given pressure.
         
         Notes
@@ -1083,8 +1081,8 @@ class CTMGrid(object):
             SIGe = SIGe * np.ones_like(Psurf)
             SIGc = SIGc * np.ones_like(Psurf)
         
-        Ze = atmtools.profiles.mod_altitude(Pe, **kwargs)
-        Zc = atmtools.profiles.mod_altitude(Pc, **kwargs)
+        Ze = atm.prof_altitude(Pe, **kwargs)
+        Zc = atm.prof_altitude(Pc, **kwargs)
         
         all_vars = {'eta_edges': ETAe,
                     'eta_centers': ETAc,
@@ -1118,12 +1116,3 @@ class CTMGrid(object):
         vertical = '%s%s vertical grid' % (nlayers, hybrid)
         return "CTM Grid '%s': %s / %s (%s)" % (self.model, horizontal,
                                                 vertical, self.description)
-
-
-def boxgrid3d_spherical(lat, lon, levels, type='cells', ):
-    """
-
-    """
-    pass
-
-

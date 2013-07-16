@@ -17,7 +17,7 @@ Code written by Gerrit Kuhlmann is also included in this package.
 
 """
 
-__all__ = ["config", "globchem", "grid", "diagnostics", "io", "atmtools",
+__all__ = ["config", "globchem", "grid", "diagnostics", "io", "tools",
            "utils",]
 __version__ = '0.2.0'
 __license__ = __doc__

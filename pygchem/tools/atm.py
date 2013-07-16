@@ -15,7 +15,7 @@
 # Last modification: 06/2013
 
 """
-This module contains routines for atmospheric profile modeling.
+This module contains routines related to atmospheric science.
 
 """
 
@@ -23,8 +23,8 @@ This module contains routines for atmospheric profile modeling.
 import numpy as np
 
 
-def mod_altitude(pressure, Pcoef=[-0.028389, -0.0493698, 0.485718, 0.278656,
-                 -17.5703, 48.0926]):
+def prof_altitude(pressure, Pcoef=[-0.028389, -0.0493698, 0.485718, 0.278656,
+                  -17.5703, 48.0926]):
     """
     Return altitude for given pressure.
     
@@ -68,8 +68,8 @@ def mod_altitude(pressure, Pcoef=[-0.028389, -0.0493698, 0.485718, 0.278656,
     return altitude.reshape(pressure.shape)
 
 
-def mod_pressure(altitude, Zcoef=[1.94170e-9, -5.14580e-7, 4.57018e-5,
-                 -1.55620e-3, -4.61994e-2, 2.99955]):
+def prof_pressure(altitude, Zcoef=[1.94170e-9, -5.14580e-7, 4.57018e-5,
+                  -1.55620e-3, -4.61994e-2, 2.99955]):
     """
     Return pressure for given altitude.
     
@@ -113,8 +113,8 @@ def mod_pressure(altitude, Zcoef=[1.94170e-9, -5.14580e-7, 4.57018e-5,
     return pressure.reshape(altitude.shape)
 
 
-def mod_temperature(altitude, Tcoef=[-4.43960e-7, 6.57752e-5, -3.62036e-3,
-                    8.75339e-2, -6.75992e-1, -5.20534, 2.88283e2]):
+def prof_temperature(altitude, Tcoef=[-4.43960e-7, 6.57752e-5, -3.62036e-3,
+                     8.75339e-2, -6.75992e-1, -5.20534, 2.88283e2]):
     """
     Return temperature for given altitude.
     

@@ -13,4 +13,4 @@ Sub-package providing miscellaneous routines for various purposes related to
 atmospheric science.
 """
 
-__all__ = ["profiles",]
+__all__ = ["atm",]

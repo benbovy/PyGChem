@@ -339,6 +339,8 @@ class DataBlock(object):
         self.origin = tuple(origin)
         self.resolution = tuple(resolution)
         self._shape = tuple(shape)
+        self._scale = 1.            # set both to ensure attribute exists
+        self.scale = 1.             # if 'scale' is later defined as a property.
 
         for k, v in kwargs.items():
             setattr(self, '_' + k, v)
@@ -396,8 +398,8 @@ class DataBlock(object):
 
     @property
     def size(self):
-        return self._values.size
-        #return reduce(lambda x, y: x * y, self._shape)
+        #return self._values.size   # do work only if data is loaded
+        return reduce(lambda x, y: x * y, self._shape)
 
     @property
     def shape(self):
@@ -413,7 +415,7 @@ class DataBlock(object):
             self._ctm_file.seek(self._position)
             vals = np.array(self._ctm_file.readline('*f'))
             vals = vals.reshape(self.shape, order='F')
-            self._values = vals
+            self._values = vals * self.scale
         return self._values
 
     @values.setter
@@ -460,12 +462,7 @@ class CTMFile(object):
             :class:`Diagnostics` instance to assign to the CTM file
         title : string
             CTM file title
-            
-        Notes
-        -----
-        Only the binary punch file format v2 is currently supported.
-        More formats (netCDF) will be supported in the future.
-        TODO: move this note to save()
+
         """
 
         datablocks_ref = check_tools.Vref(DataBlock),
@@ -517,6 +514,8 @@ class CTMFile(object):
             If True only data block headers will be read into memory and the
             values will read on request. Default: True.
         """
+        # TODO: allow to load from a list of files or using a UNIX expression
+        
         if init_diagnostics and diagnostics is None:
             # create a new instance of Diagnostics
             dir_path = os.path.dirname(filename)

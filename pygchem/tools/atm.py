@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# module grid
+# module atm
 # parts of pygchem (Python interface for GEOS-Chem Chemistry Transport Model)
 #
 # Copyright (C) 2013 Benoit Bovy

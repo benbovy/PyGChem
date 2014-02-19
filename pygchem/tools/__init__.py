@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# subpackage pygchem.atmtools
+# subpackage pygchem.tools
 # pygchem: Python interface for GEOS-Chem Chemistry Transport Model
 #
 # Copyright (C) 2013 Benoit Bovy

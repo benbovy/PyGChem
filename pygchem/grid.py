@@ -949,7 +949,7 @@ class CTMGrid(object):
         var : {'pressure', 'altitude', 'eta', 'sigma'}
             Scalar or coordinate to be returned.
         pos : {'edges', 'centers'}
-            Return values either at grid centers or grid bottom edges
+            Get values either at grid centers or grid bottom edges
         Psurf : None or float or 1-d array-like or 2-d array-like
             Surface air pressure(s) [hPa]. If None, the value from the `Psurf`
             attribute of the :class:`CTMGrid` instance is used.
@@ -1031,8 +1031,7 @@ class CTMGrid(object):
         
         Examples
         --------
-        TODO: examples to show how 2-d and 3-d are "oriented" (using latlon and
-        meshgrid)
+        TODO:
         
         """
         

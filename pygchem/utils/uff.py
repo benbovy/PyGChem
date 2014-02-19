@@ -3,56 +3,68 @@
 # module uff
 # parts of pygchem (Python interface for GEOS-Chem Chemistry Transport Model)
 #
-# Copyright (C) 2012 Gerrit Kuhlmann
+# Copyright (C) 2012 Gerrit Kuhlmann, Benoît Bovy
 # see license.txt for more details
 # 
 #
-# Last modification: 2012
+# Last modification: 08/2013
 
 """
-Module for reading and writing unformatted Fortran files.
+Module for reading and writing unformatted binary Fortran files.
 """
-
 
 import itertools
 import struct
+
 
 _FIX_ERROR = (
     'Pre- and suffix of line do not match. This can happen, if the'
     ' `endian` is incorrect.'
 )
 
+
 class FortranFile(file):
+    """
+    A class for reading and writing unformatted binary Fortran files. 
+
+    Parameters
+    ----------
+    filename : string or `file` instance
+        filename or opened file (the read/write pointer will be reset to the
+        beginning of the file.
+    mode : {'rb', 'wb'}
+        mode of the file: 'rb' (reading binary, default) or 'wb'
+        (writing binary).
+    endian : {'@', '<', '>'}
+        byte order, size and alignment of the data in the file.
+        '@' native (default), '<' little-endian, and '>' big-endian.
+
+    Notes
+    -----
+    Fortran writes data as "lines" when using the PRINT or WRITE statements.
+    Each line consists of:
+        - a prefix (4 byte integer gives the size of the data)
+        - the real data
+        - a suffix (same as prefix).
+
+    This class can be used to read and write these "lines", in a similar
+    way as reading "real lines" in a text file. A format can be given,
+    while reading or writing to pack or unpack data into a binary
+    format, using the 'struct' module from the Python standard library.
+    
+    See Documentation of Python's struct module for details endians and
+    format strings: http://docs.python.org/library/struct.htm
+    """
 
     def __init__(self, filename, mode='rb', endian='@'):
         """
-        A class for reading and writing unformatted Fortran files. Fortran
-        writes data as "lines" when using the PRINT or WRITE statements.
-        Each line consists of:
-            - a prefix (4 byte integer gives the size of the data)
-            - the real data
-            - a suffix (same as prefix).
-
-        This class can be used to read and write these "lines", in a similar
-        way as reading "real lines" in a text file. A format can be given,
-        while reading or writing to pack or unpack data into a binary
-        format, using the 'struct' modul from the Python standard library.
-
-        Arguments of FortranFile:
-
-        filename, mode
-            'filename' and 'mode' of the file. Default mode is 'rb' (reading
-            binary).
-        endian
-            byte order, size and alignment of the data in
-            the file. Possible characters are e.g.: '@' native (default),
-            '<' little-endian, and '>' big-endian.
-
-        See Documentation of Python's struct module for details endians and
-        format strings: http://docs.python.org/library/struct.html
+        An unformatted binary Fortran file (see Class docstrings).
         """
         self.endian = endian
-        file.__init__(self, filename, mode)
+        if not isinstance(filename, file):
+            file.__init__(self, filename, mode)
+        else:
+            self.seek(0) 
 
     def _fix(self, fmt='i'):
         """
@@ -93,8 +105,8 @@ class FortranFile(file):
 
     def skipline(self):
         """
-        Skip the next line and returns position and size of line. Raises IOError
-        if pre- and suffix of line do not match.
+        Skip the next line and returns position and size of line.
+        Raises IOError if pre- and suffix of line do not match.
         """
         position = self.tell()
         prefix = self._fix()
@@ -150,8 +162,8 @@ def _replace_star(fmt, size):
     Raises `ValueError` if number of `*`s is larger than 1. If no `*`
     in `fmt`, returns `fmt` without checking its size!
 
-    Example
-    -------
+    Examples
+    --------
     >>> _replace_star('ii*fi', 40)
     'ii7fi'
     """

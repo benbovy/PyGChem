@@ -46,7 +46,7 @@ import netcdftime
 
 from pygchem.grid import CTMGrid
 from pygchem.diagnostics import CTMFile, DataBlock
-from pygchem.io import gc2cf
+from pygchem.datafield_backends import gc2cf
 from pygchem.utils import uff, timetools
 
 

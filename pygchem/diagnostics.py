@@ -268,7 +268,7 @@ class DataBlock(object):
     def __init__(self, index, category, times, modelname='GEOS5_47L',
                  center180=True, halfpolar=True,
                  origin=(1, 1, 1), resolution=(5., 4.), shape=(0, 0, 0),
-                 diagnostics=None, ctm_file=None, position=None, values=[],
+                 diagnostics=None, ctm_file=None, position=None, values=None,
                  **kwargs):
         """
         Create a new data block.
@@ -340,7 +340,11 @@ class DataBlock(object):
         self.resolution = tuple(resolution)
         self._shape = tuple(shape)
         self._scale = 1.            # set both to ensure attribute exists
-        self.scale = 1.             # if 'scale' is later defined as a property.
+        self.scale = 1.             # whether is defined in **kwargs or not
+        self._name = ""             #
+        self.name = ""              #
+        self._number = None         #
+        self.number = None          #
 
         for k, v in kwargs.items():
             setattr(self, '_' + k, v)
@@ -348,6 +352,7 @@ class DataBlock(object):
         # position of data in ctm_file (will be loaded on request)
         self._position = position
         self._ctm_file = ctm_file
+        values = values or []
         self._values = np.array(values)
 
         # verify consistency using the diagnostics instance
@@ -410,7 +415,7 @@ class DataBlock(object):
 
     @property
     def values(self):
-        if (self.size == 0 and self._ctm_file is not None
+        if (self.size != 0 and self._ctm_file is not None
             and self._position is not None):
             self._ctm_file.seek(self._position)
             vals = np.array(self._ctm_file.readline('*f'))

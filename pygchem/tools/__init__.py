@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 
-# subpackage pygchem.tools
-# pygchem: Python interface for GEOS-Chem Chemistry Transport Model
+# parts of pygchem (Python interface for GEOS-Chem Chemistry Transport Model)
 #
-# Copyright (C) 2013 Benoit Bovy
+# Copyright (C) 2013-2014 Benoit Bovy
 # see license.txt for more details
 #
-# Last modification: 06/2013
 
 """
-Sub-package providing miscellaneous routines for various purposes related to
-atmospheric science.
+Toolbox which provide miscellaneous functions organized in several
+modules following their usage or their external dependencies.
+
 """
 
-__all__ = ["atm",]
+__all__ = ["atm", ]

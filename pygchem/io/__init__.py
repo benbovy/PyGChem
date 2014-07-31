@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
-# subpackage pygchem.io
-# pygchem: Python interface for GEOS-Chem Chemistry Transport Model
+# parts of pygchem: Python interface for GEOS-Chem Chemistry Transport Model
 #
-# Copyright (C) 2012 Benoit Bovy
+# Copyright (C) 2013-2014 Benoit Bovy
 # see license.txt for more details
 #
-# Last modification: 11/2012
 
 """
-Module for common input/output operations
+Read/write GEOS-Chem files (input or output) into/from Python built-in
+data structures.
+
 """
 
-__all__ = ["globchem", "bpch2", ]
+__all__ = ["globchem", "bpch", "diaginfo"]

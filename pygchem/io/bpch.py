@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
 
-# module io.bpch2
 # parts of pygchem (Python interface for GEOS-Chem Chemistry Transport Model)
 #
-# Copyright (C) 2012-2013 Gerrit Kuhlmann, Benoît Bovy
+# Copyright (C) 2012-2014 Gerrit Kuhlmann, Benoît Bovy
 # see license.txt for more details
-# 
 #
-# Last modification: 04/2013
 
 """
-Module for reading and writing binary punch files v2
+Read / write binary punch (BPCH) files.
+
 """
 
 import os
@@ -20,44 +18,73 @@ import numpy as np
 from pygchem.utils import uff, timetools
 
 
-def read_bpch2(filename, mode='rb', endian='>', skip_values=True):
+FILETYPE02 = "CTM bin 02"
+FILETYPE4D = "CTM bin 4D"
+DEFAULT_TITLE = "GEOS-CHEM binary punch file v. 2.0"
+
+
+def read_bpch(filename, mode='rb', skip_data=True, **kwargs):
     """
-    Read the binary punch file v2 given by `filename`, with `mode` and
-    `endian`.
+    Read the binary punch file v2 format.
+
+    Parameters
+    ----------
+    filename : string
+        name or path to the bpch file.
+    mode : {'r', 'r+', rb', 'r+b', 'a'}
+        file open mode (see :func:`open`). Writing only ('w' or 'wb') is not
+        allowed.
+    skip_data : bool
+        if True, only data block metadata will be read (it will not load data
+        into memory but data position and size information will be provided
+        in addition to metadata).
+    **kwargs
+        extra parameters passed to :class:`pygchem.utils.uff.FortranFile`
+        (e.g., `endian`).
     
-    Return ctm_file (the opened file instance), filetype, filetitle and
-    the list of data blocks (both metadata and values as a dictionary).
-    
-    If `skip_values' is True, only data block headers will be read (values not
-    loaded into memory). 
+    Returns
+    -------
+    bpch_file
+        the open file instance (:class:`pygchem.utils.uff.FortranFile` object).
+    filetype
+        bpch file type identifier (given in the file's header)
+    filetitle
+        title (given in the file's header)
+    datablocks
+        the list of data blocks, i.e., dictionaries with data block metadata
+        (and data).
+
     """
+    if mode != 'a' and not mode.endswith('b'):
+        mode += 'b'      # platform independent
+    if 'w' in mode:
+        raise ValueError("write-only mode is not allowed for reading the "
+                         "bpch file")
+    bpch_file = uff.FortranFile(filename, mode, **kwargs)  # don't close file
 
     datablocks = []
-
-    ctm_file = uff.FortranFile(filename, mode, endian)  # don't close file
-
-    filetype = ctm_file.readline().strip()
+    filetype = bpch_file.readline().strip()
     fsize = os.path.getsize(filename)
-    filetitle = ctm_file.readline().strip()
+    filetitle = bpch_file.readline().strip()
 
-    while ctm_file.tell() < fsize:
+    while bpch_file.tell() < fsize:
         # read first and second header line
-        line = ctm_file.readline('20sffii')
+        line = bpch_file.readline('20sffii')
         modelname, res0, res1, halfpolar, center180 = line
-        line = ctm_file.readline('40si40sdd40s7i')
-        category, index, unit, tau0, tau1, reserved = line[:6]
+        line = bpch_file.readline('40si40sdd40s7i')
+        category, number, unit, tau0, tau1, reserved = line[:6]
         dim0, dim1, dim2, dim3, dim4, dim5, skip = line[6:]
 
-        # skip datablock (or read datablock if accessing value)
-        position = ctm_file.tell()
-        if skip_values:
-            ctm_file.skipline()
-            values = np.array([])
+        # skip datablock (or read datablock if accessing data)
+        file_position = bpch_file.tell()
+        if skip_data:
+            bpch_file.skipline()
+            data = np.array([])
         else:
-            values = np.array(ctm_file.readline('*f'))
-            values = values.reshape((dim0, dim1, dim2), order='F')
+            data = np.array(bpch_file.readline('*f'))
+            data = data.reshape((dim0, dim1, dim2), order='F')
 
-        datablock = {'index': int(index),
+        datablock = {'number': int(number),
                      'category': category.strip(),
                      'times': (timetools.tau2time(tau0),
                                timetools.tau2time(tau1)),
@@ -67,38 +94,99 @@ def read_bpch2(filename, mode='rb', endian='>', skip_values=True):
                      'origin': (dim3, dim4, dim5),
                      'resolution': (res0, res1),
                      'shape': (dim0, dim1, dim2),
-                     'ctm_file': ctm_file,
-                     'position': position,
-                     'values': values,
-                     'unit': unit.strip()
-                    }
-
+                     'from_file': os.path.abspath(filename),
+                     'file_position': file_position,
+                     'data': data,
+                     'unit': unit.strip()}
         datablocks.append(datablock)
 
-    return ctm_file, filetype, filetitle, datablocks
+    return bpch_file, filetype, filetitle, datablocks
 
 
-def write_bpch2(ctm_file, filename, endian='>'):
+def create_bpch(filename, title=DEFAULT_TITLE, filetype=FILETYPE02, **kwargs):
     """
-    Save a CTM file object to a binary punch file v2 given by `filename`. 
+    Create a new empty bpch file.
+
+    Parameters
+    ----------
+    filename : string
+        name or path to the bpch file.
+    title : string
+        a title line to write in the file's header.
+    filetype : string
+        bpch file type identifier (either :attr:`bpch.FILETYPE02` or
+        :attr:`bpch.FILETYPE4D`).
+    **kwargs
+        extra parameters passed to :class:`pygchem.utils.uff.FortranFile`
+        (e.g., `endian`).
+
+    Returns
+    -------
+    bpch_file
+        the open file instance (:class:`pygchem.utils.uff.FortranFile` object).
+
     """
-    with uff.FortranFile(filename, 'wb', endian) as out_file:
-        # write header
-        out_file.writeline('40s', ctm_file.filetype.ljust(40))
-        out_file.writeline('80s', ctm_file.title.ljust(80))
+    bpch_file = uff.FortranFile(filename, 'wb', **kwargs)
+    bpch_file.writeline('40s', filetype.ljust(40))
+    bpch_file.writeline('80s', title.ljust(80))
+    return bpch_file
 
-        # write data blocks
-        for b in ctm_file.datablocks:
-            out_file.writeline('20sffii',
-                b.modelname.ljust(20), b.resolution[0],
-                b.resolution[1], b.halfpolar, b.center180
-                )
-            out_file.writeline('40si40s2d40s7i',
-                b.category.ljust(40), b.index, b.unit.ljust(40),
-                timetools.time2tau(b.times[0]), timetools.time2tau(b.times[1]),
-                ''.ljust(40), b.shape[0], b.shape[1], b.shape[2],
-                b.origin[0], b.origin[1], b.origin[2], b.size * 4
-                )
-            vals = b.values.flatten('F')
-            out_file.writeline('%df' % b.size, *vals)
 
+def append_bpch(bpch_file, datablock):
+    """
+    Append a data block to an open bpch file.
+
+    Parameters
+    ----------
+    bpch_file : file object
+        bpch file (with writing permissions), as returned by
+        :func:`read_bpch` or :func:`create_bpch`.
+    datablock : dict
+        data block metadata and data.
+
+    """
+    bpch_file.writeline(
+        '20sffii',
+        datablock['modelname'].ljust(20),
+        datablock['resolution'][0], datablock['resolution'][1],
+        datablock['halfpolar'], datablock['center180']
+    )
+    bpch_file.writeline(
+        '40si40s2d40s7i',
+        datablock['category'].ljust(40),
+        datablock['index'], datablock['unit'].ljust(40),
+        timetools.time2tau(datablock['times'][0]),
+        timetools.time2tau(datablock['times'][1]),
+        ''.ljust(40),
+        datablock['shape'][0], datablock['shape'][1], datablock['shape'][2],
+        datablock['origin'][0], datablock['origin'][1], datablock['origin'][2],
+        datablock['data'].size * 4
+    )
+    data = datablock['data'].flatten('F')
+    bpch_file.writeline('%df' % datablock['data'].size, *data)
+
+
+def write_bpch(filename, datablocks, title=DEFAULT_TITLE,
+               filetype=FILETYPE02, **kwargs):
+    """
+    Write data blocks to the binary punch file v2 format.
+
+    Parameters
+    ----------
+    filename : string
+        name or path to the bpch file.
+    datablocks : sequence of dicts
+        data blocks metadata and data.
+    title : string
+        a title line to write in the file's header.
+    filetype : string
+        bpch file type identifier (either :attr:`bpch.FILETYPE02` or
+        :attr:`bpch.FILETYPE4D`).
+    **kwargs
+        extra parameters passed to :class:`pygchem.utils.uff.FortranFile`
+        (e.g., `endian`).
+
+    """
+    with create_bpch(filename, title, filetype, **kwargs) as bpch_file:
+        for db in datablocks:
+            append_bpch(bpch_file, db)

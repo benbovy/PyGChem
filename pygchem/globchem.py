@@ -33,7 +33,6 @@ import math
 import numpy as np
 
 from pygchem.utils.custom_decorators import mixedmethod, classproperty
-import pygchem.utils.error_handling
 import pygchem.io.globchem as iogc
 
 

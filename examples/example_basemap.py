@@ -10,8 +10,9 @@ A simple example for mapping CTM diagnostics using matplotlib/basemap
 import os
 import datetime
 
-import pygchem.diagnostics as gdiag
+import temp.diagnostics as gdiag
 import temp_map2D
+
 
 ws = "/Volumes/data/03_geo/geoschem/GEOS-Chem-rundirs/4x5/geos5/standard"
 bpch_fname = "ctm.bpch"

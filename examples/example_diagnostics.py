@@ -12,7 +12,7 @@ import datetime
 
 import numpy as np
 
-import pygchem.diagnostics as gdiag
+import temp.diagnostics as gdiag
 
 
 ws = "/Volumes/data/03_geo/geoschem/GEOS-Chem-rundirs/4x5/geos5/standard"

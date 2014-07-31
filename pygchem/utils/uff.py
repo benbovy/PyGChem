@@ -1,26 +1,22 @@
 # -*- coding: utf-8 -*-
 
-# module uff
 # parts of pygchem (Python interface for GEOS-Chem Chemistry Transport Model)
 #
-# Copyright (C) 2012 Gerrit Kuhlmann, Benoît Bovy
+# Copyright (C) 2012-2014 Gerrit Kuhlmann, Benoît Bovy
 # see license.txt for more details
-# 
 #
-# Last modification: 08/2013
+
 
 """
-Module for reading and writing unformatted binary Fortran files.
+Read / write unformatted binary Fortran files.
+
 """
 
-import itertools
 import struct
 
 
-_FIX_ERROR = (
-    'Pre- and suffix of line do not match. This can happen, if the'
-    ' `endian` is incorrect.'
-)
+_FIX_ERROR = ("Pre- and suffix of line do not match. This can happen, if the"
+              " `endian` is incorrect.")
 
 
 class FortranFile(file):
@@ -37,7 +33,7 @@ class FortranFile(file):
         (writing binary).
     endian : {'@', '<', '>'}
         byte order, size and alignment of the data in the file.
-        '@' native (default), '<' little-endian, and '>' big-endian.
+        '@' native, '<' little-endian, and '>' big-endian (default).
 
     Notes
     -----
@@ -52,14 +48,11 @@ class FortranFile(file):
     while reading or writing to pack or unpack data into a binary
     format, using the 'struct' module from the Python standard library.
     
-    See Documentation of Python's struct module for details endians and
-    format strings: http://docs.python.org/library/struct.htm
+    See Documentation of Python's struct module for details on endians and
+    format strings: https://docs.python.org/library/struct.html
     """
 
-    def __init__(self, filename, mode='rb', endian='@'):
-        """
-        An unformatted binary Fortran file (see Class docstrings).
-        """
+    def __init__(self, filename, mode='rb', endian='>'):
         self.endian = endian
         if not isinstance(filename, file):
             file.__init__(self, filename, mode)
@@ -83,16 +76,22 @@ class FortranFile(file):
         Return next unformatted "line". If format is given, unpack content,
         otherwise return byte string.
         """
-        size = self._fix()
+        prefix_size = self._fix()
 
         if fmt is None:
-            content = self.read(size)
+            content = self.read(prefix_size)
         else:
             fmt = self.endian + fmt
-            fmt = _replace_star(fmt, size)
-            content = struct.unpack(fmt, self.read(size))
+            fmt = _replace_star(fmt, prefix_size)
+            content = struct.unpack(fmt, self.read(prefix_size))
 
-        if size != self._fix():
+        try:
+            suffix_size = self._fix()
+        except EOFError:
+            # when endian is invalid and prefix_size > total file size
+            suffix_size = -1
+
+        if prefix_size != suffix_size:
             raise IOError(_FIX_ERROR)
 
         return content
@@ -110,7 +109,7 @@ class FortranFile(file):
         """
         position = self.tell()
         prefix = self._fix()
-        self.seek(prefix, 1) # skip content
+        self.seek(prefix, 1)  # skip content
         suffix = self._fix()
 
         if prefix != suffix:
@@ -159,7 +158,7 @@ def _replace_star(fmt, size):
     struct.calcsize(fmt) is equal to the given `size` using the format
     following the placeholder.
 
-    Raises `ValueError` if number of `*`s is larger than 1. If no `*`
+    Raises `ValueError` if number of `*` is larger than 1. If no `*`
     in `fmt`, returns `fmt` without checking its size!
 
     Examples
@@ -180,4 +179,3 @@ def _replace_star(fmt, size):
         fmt = fmt.replace('*', str(n))
 
     return fmt
-

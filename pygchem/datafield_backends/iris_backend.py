@@ -32,7 +32,6 @@ from __future__ import absolute_import
 import os
 import glob
 import warnings
-import string
 from copy import deepcopy
 
 import numpy as np
@@ -41,13 +40,12 @@ import iris.exceptions as iexceptions
 import iris.coords as icoords
 import iris.fileformats as ifileformats
 import iris.io.format_picker as format_picker
-from iris.aux_factory import AuxCoordFactory
-import netcdftime
 
 from pygchem.grid import CTMGrid
-from pygchem.diagnostics import CTMFile, DataBlock
+from temp.diagnostics import CTMFile, DataBlock
 from pygchem.datafield_backends import gc2cf
 from pygchem.utils import uff, timetools
+
 
 
 # time encoding for bpch files

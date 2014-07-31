@@ -25,7 +25,10 @@ PACKAGE_DATA_PATH = os.path.join(PACKAGE_ROOT_PATH, "data")
 del _this_file
 
 # Default GEOS-Chem version
-GCHEM_VERSION = "v9-01-03"
+GCHEM_VERSION = "v9-02"
 
 # physical or chemical constants
-C_MOLECULAR_WEIGHT = 12e-3    # molecular weight C atoms (kg/mole)
+C_MOLECULAR_WEIGHT = 12e-3    # molecular weight of C atoms (kg/mole)
+
+# other
+WARN_STDOUT = False

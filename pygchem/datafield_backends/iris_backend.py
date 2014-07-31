@@ -44,7 +44,7 @@ import iris.io.format_picker as format_picker
 from pygchem.grid import CTMGrid
 from temp.diagnostics import CTMFile, DataBlock
 from pygchem.datafield_backends import gc2cf
-from pygchem.utils import uff, timetools
+from pygchem.utils import uff, timeutil
 
 
 
@@ -443,8 +443,8 @@ def _datablock_to_cube(datablock, dim_coords_and_dims=None,
             cube.add_aux_factory(aux_factory)
      
     # time coordinates
-    point = timetools.time2tau(datablock.times[0])
-    bounds = [timetools.time2tau(time) for time in datablock.times]
+    point = timeutil.time2tau(datablock.times[0])
+    bounds = [timeutil.time2tau(time) for time in datablock.times]
  
     time_coord = icoords.DimCoord(points=point,
                                   bounds=bounds,

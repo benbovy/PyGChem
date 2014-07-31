@@ -7,7 +7,6 @@
 # see license.txt for more details
 # 
 #
-# Last modification: 04/2013
 
 """
 Miscellaneous routine(s) for time calculations and conversions

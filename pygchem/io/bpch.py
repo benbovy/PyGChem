@@ -15,7 +15,7 @@ import os
 
 import numpy as np
 
-from pygchem.utils import uff, timetools
+from pygchem.utils import uff, timeutil
 
 
 FILETYPE02 = "CTM bin 02"
@@ -86,8 +86,8 @@ def read_bpch(filename, mode='rb', skip_data=True, **kwargs):
 
         datablock = {'number': int(number),
                      'category': category.strip(),
-                     'times': (timetools.tau2time(tau0),
-                               timetools.tau2time(tau1)),
+                     'times': (timeutil.tau2time(tau0),
+                               timeutil.tau2time(tau1)),
                      'modelname': modelname.strip(),
                      'center180': bool(center180),
                      'halfpolar': bool(halfpolar),
@@ -155,8 +155,8 @@ def append_bpch(bpch_file, datablock):
         '40si40s2d40s7i',
         datablock['category'].ljust(40),
         datablock['number'], datablock['unit'].ljust(40),
-        timetools.time2tau(datablock['times'][0]),
-        timetools.time2tau(datablock['times'][1]),
+        timeutil.time2tau(datablock['times'][0]),
+        timeutil.time2tau(datablock['times'][1]),
         ''.ljust(40),
         datablock['shape'][0], datablock['shape'][1], datablock['shape'][2],
         datablock['origin'][0], datablock['origin'][1], datablock['origin'][2],

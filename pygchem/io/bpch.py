@@ -154,7 +154,7 @@ def append_bpch(bpch_file, datablock):
     bpch_file.writeline(
         '40si40s2d40s7i',
         datablock['category'].ljust(40),
-        datablock['index'], datablock['unit'].ljust(40),
+        datablock['number'], datablock['unit'].ljust(40),
         timetools.time2tau(datablock['times'][0]),
         timetools.time2tau(datablock['times'][1]),
         ''.ljust(40),

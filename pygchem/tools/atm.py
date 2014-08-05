@@ -42,9 +42,9 @@ def prof_altitude(pressure, p_coef=(-0.028389, -0.0493698, 0.485718, 0.278656,
     
     See Also
     --------
-    mod_pressure : Returns pressure for
+    prof_pressure : Returns pressure for
         given altitude.
-    mod_temperature : Returns air temperature for
+    prof_temperature : Returns air temperature for
         given altitude.
     
     Notes
@@ -87,9 +87,9 @@ def prof_pressure(altitude, z_coef=(1.94170e-9, -5.14580e-7, 4.57018e-5,
     
     See Also
     --------
-    mod_altitude : Returns altitude for
+    prof_altitude : Returns altitude for
         given pressure.
-    mod_temperature : Returns air temperature for
+    prof_temperature : Returns air temperature for
         given altitude.
     
     Notes
@@ -132,9 +132,9 @@ def prof_temperature(altitude, t_coef=(-4.43960e-7, 6.57752e-5, -3.62036e-3,
     
     See Also
     --------
-    mod_altitude : Returns altitude for
+    prof_altitude : Returns altitude for
         given pressure.
-    mod_pressure : Returns pressure for
+    prof_pressure : Returns pressure for
         given altitude.
     
     Notes

@@ -8,17 +8,34 @@
 
 """
 A bunch of utility functions based on the SciTools's Iris package.
+
 """
 
+import collections
+import warnings
+from types import StringTypes
+
 import numpy as np
+import biggus
 import iris
+import iris.coords
+import iris.exceptions
+import iris.util
+import iris.unit
+import iris.analysis
+import iris.coord_systems
+import iris.analysis.cartography
 
 from pygchem import grid
+from pygchem.io import bpch
+from pygchem.tools import ctm2cf
+from pygchem.utils import exceptions, timeutil
 
-#-----------------------------------------------------------------------------
-# Generic functions not specific to GEOS-Chem datasets
-#-----------------------------------------------------------------------------
 
+
+# -----------------------------------------------------------------------------
+# Generic functions not specific to CTM datasets
+#------------------------------------------------------------------------------
 
 def set_dim_order(cube, coord_names):
     """
@@ -64,10 +81,52 @@ def get_dim_from_coord1d(cube, coord_name):
     return cdims[0]
 
 
+def add_dim_aux_coord(cube, coord, dim, err='error'):
+    """
+    Add a dimensional or auxiliary coordinate to a cube.
+
+    If the coordinate cannot be mapped to the given dimension of the cube,
+    it raises an error, shows a warning or do nothing.
+
+    Parameters
+    ----------
+    cube : :class:`iris.cube.Cube`
+        the cube to process (changes will be made in-place).
+    coord : :class:`iris.coords.DimCoord` or :class:`iris.coords.AuxCoord`
+        the iris coordinate to assign to the cube.
+    dim : int
+        the dimension to which the coordinate will be added.
+    err : {'error', 'warning', 'pass'}
+        whether to raise an error, show a warning or do nothing if mapping
+        the coordinate fails.
+
+    Raises
+    ------
+    ValueError
+        if `err`='error' and if the coordinate cannot be mapped.
+
+    """
+    try:
+        if isinstance(coord, iris.coords.DimCoord):
+            cube.add_dim_coord(coord, dim)
+        else:
+            cube.add_aux_coord(coord, dim)
+    except ValueError:
+        if err == 'error':
+            raise
+        elif err == 'warning':
+            warnings.warn("{classname} {coordname} could not be assigned to "
+                          "cube {cubename} at dimension {dim}"
+                          .format(classname=coord.__class__.__name__,
+                                  coordname=coord.name(),
+                                  cubename=cube.name(),
+                                  dim=dim))
+
+
 def permute_dim_aux_coords(cube, dim_coord, aux_coord):
     """
     Permute a dimension coordinate with
-    an auxilliary coordinate in a cube.
+    an auxiliary coordinate in a cube.
 
     Parameters
     ----------
@@ -76,7 +135,7 @@ def permute_dim_aux_coords(cube, dim_coord, aux_coord):
     dim_coord : string or :class:`iris.coords.DimCoord`
         (name of) the dimension coordinate to permute.
     aux_coord : string or :class:`iris.coords.AuxCoord`
-        (name of) the auxilliary coordinate to permute.
+        (name of) the auxiliary coordinate to permute.
         must contain the same cube dimension than `dim_coord`
         and must satisfy the criteria required for dimensional
         coordinates (1D, numeric, and strictly monotonic).
@@ -105,12 +164,180 @@ def permute_dim_aux_coords(cube, dim_coord, aux_coord):
 
 def remove_dim_aux_coords(cube, dimensions):
     """
-    Remove in `cube` all auxilliary coordinates
+    Remove in `cube` all auxiliary coordinates
     that contain `dimensions`.
     """
     for coord in cube.coords(dimensions=dimensions):
         if isinstance(coord, iris.coords.AuxCoord):
             cube.remove_coord(coord)
+
+
+# -----------------------------------------------------------------------------
+# Functions to create Iris cubes from BPCH datablocks
+#------------------------------------------------------------------------------
+
+# time encoding for bpch files
+CTM_TIME_UNIT = iris.unit.Unit('hours since 1985-01-01 00:00:00',
+                               calendar=iris.unit.CALENDAR_STANDARD)
+
+
+def _datablock_to_cube(datablock, dim_coords_and_dims=None,
+                       aux_coords_and_dims=None, aux_factories=None,
+                       coords_from_model=True, errcoord='error',
+                       **kwargs):
+    """
+    Create a :class:`iris.cubes.Cube` object given a datablock dict.
+    """
+    # TODO: cell methods
+
+    # Create cube with data or data proxy, but no metadata
+    if isinstance(datablock['data'], bpch.BPCHDataProxy):
+        data = biggus.OrthoArrayAdapter(datablock['data'])
+    else:
+        data = datablock['data']
+    cube = iris.cube.Cube(data)
+
+    # set the cube's name ('name_category')
+    name = "_".join([datablock['name'], datablock['category']])
+    cube.rename(name)
+
+    # set coordinates from datablock metadata
+    if coords_from_model:
+        ctm_grid = grid.CTMGrid.from_model(datablock['modelname'],
+                                           resolution=datablock['resolution'])
+        coord_names = ('longitude', 'latitude', 'levels')
+        lon, lat, lev = coord_from_grid(ctm_grid, coord=coord_names)
+        cube.add_dim_coord(lon, 0)
+        cube.add_dim_coord(lat, 1)
+        if cube.ndim > 2:
+            add_dim_aux_coord(cube, lev, 2, err='pass')
+
+    # add given dimension coordinates if any
+    if dim_coords_and_dims:
+        for coord, dim in dim_coords_and_dims:
+            add_dim_aux_coord(cube, coord, dim, err=errcoord)
+
+    # add given auxiliary coordinates if any
+    if aux_coords_and_dims:
+        for coord, dim in aux_coords_and_dims:
+            add_dim_aux_coord(cube, coord, dim, err=errcoord)
+
+    # add given aux coordinates factories if any
+    if aux_factories:
+        for aux_factory in aux_factories:
+            cube.add_aux_factory(aux_factory)
+
+    # time coordinates
+    point = timeutil.time2tau(datablock.times[0])
+    bounds = [timeutil.time2tau(time) for time in datablock.times]
+    time_coord = iris.coords.DimCoord(points=point,
+                                      bounds=bounds,
+                                      standard_name='time',
+                                      units=CTM_TIME_UNIT)
+    cube.add_aux_coord(time_coord)
+
+    # units
+    units = datablock['unit'].strip()
+    try:
+        cube.units = units
+    except ValueError:
+        # Try to get equivalent units compatible with udunits.
+        # Store original unit as cube attribute
+        conform_units = ctm2cf.get_cfcompliant_units(units)
+        try:
+            cube.units = conform_units
+        except ValueError:
+            warnings.warn("Invalid udunits2 '{0}'".format(units))
+        cube.attributes["ctm_units"] = units
+
+    # attributes
+    if isinstance(datablock['tracerinfo'], dict):
+        cube.attributes.update(datablock['tracerinfo'])
+        cube.attributes.pop('unit')
+    for attr_name in ('name', 'number', 'category', 'modelname', 'resolution',
+                      'loaded_from_file', 'save_to_file'):
+        cube.attributes[attr_name] = datablock.get(attr_name, None)
+    cube.attributes.update(kwargs)
+
+    return cube
+
+
+def datablocks_to_cubes(datablocks, dim_coords_and_dims=None,
+                        aux_coords_and_dims=None, aux_factories=None,
+                        coords_from_model=True, errcoord='error',
+                        merge=True, **kwargs):
+    """
+    Create Iris's cubes from BPCH datablock(s).
+
+    Parameters
+    ----------
+    datablocks : (sequence of) dict(s)
+        One or more dictionaries representing the data block(s) data and
+        metadata, as returned by :func:`pygchem.io.bpch.read_bpch`.
+    dim_coords_and_dims : list or None
+        A list of dimension coordinates with scalar dimension mappings, e.g
+        ``[(lat_coord, 0), (lon_coord, 1)]``, relative to all datablocks.
+        Coordinates must be :class:`iris.coords.DimCoord` instances.
+    aux_coords_and_dims : list or None
+        A list of auxiliary coordinates with scalar dimension mappings, e.g
+        ``[(lat_coord2, 0), (lon_coord2, 1)]``, relative to all datablocks.
+        Coordinates must be :class:`iris.coords.DimCoord` and/or
+        :class:`iris.coords.AuxCoord` instances.
+    aux_factories : list or None
+        A list of auxiliary coordinate factories (see :mod:`iris.aux_factory`)
+        relative to all datablocks.
+    coords_from_model : bool
+        If True, attributes of each datablock (e.g., `modelname`, `resolution`)
+        will be used to set the cube coordinates
+        (see :class:`pygchem.grid.CTMGrid` and :func:`coords_from_ctmgrid`).
+    errcoord : {'error', 'warning', 'pass'}
+        whether to raise an error, show a warning or do nothing if mapping
+        a coordinate to the given dimension of the cube fails.
+        cannot be mapped to the cube fails.
+    merge : bool
+        If True, contiguous datablocks in space or time are merged into a
+        single cube when possible.
+
+    Returns
+    -------
+    A :class:`iris.cubes.Cube` object or a :class:`iris.cubes.CubeList`
+    instance, following the given `datablocks`.
+
+    Other parameters
+    ----------------
+    **kwargs
+        Any 'attribute_name'='attribute_value' that will be added as attributes
+        for each returned cube.
+
+    Notes
+    -----
+    The resultant cubes may not be in the same order as in the `datablocks`
+    sequence.
+
+    The names of the resultant cubes are given by "`name`_`category`"
+    attributes of the corresponding datablocks.
+
+    """
+    if not isinstance(datablocks, collections.Iterable):
+        datablocks = tuple(datablocks)
+
+    cube_gen = (_datablock_to_cube(datablock,
+                                   dim_coords_and_dims,
+                                   aux_coords_and_dims,
+                                   aux_factories,
+                                   coords_from_model,
+                                   errcoord,
+                                   **kwargs)
+                for datablock in datablocks)
+    cube_list = iris.cube.CubeList(cube_gen)
+
+    if merge:
+        cube_list = cube_list.merge(unique=False)
+
+    if len(cube_list) == 1:
+        return cube_list[0]
+    else:
+        return cube_list
 
 
 #-----------------------------------------------------------------------------
@@ -189,10 +416,10 @@ def ppbC_2_ppbv(cube):
     ppbC = parts per billion carbon
          = ppbv * number of carbon atoms in the tracer molecule
     """
-    is_ppbC = cube.attributes.get('no_udunits2') == 'ppbC'
+    is_ppbc = cube.attributes.get('no_udunits2') == 'ppbC'
     is_hydrocarbon = cube.attributes.get('hydrocarbon')
 
-    if is_hydrocarbon and is_ppbC:
+    if is_hydrocarbon and is_ppbc:
         carbon_weight = cube.attributes.get('carbon_weight')
         cube.data = cube.data / carbon_weight
         cube.units = 'ppbv'
@@ -201,6 +428,118 @@ def ppbC_2_ppbv(cube):
 #-----------------------------------------------------------------------------
 # Functions for computing grid-related data and other additional data
 #-----------------------------------------------------------------------------
+
+def coord_from_grid(ctm_grid, coord=('longitude', 'latitude', 'levels',
+                    'sigma', 'eta', 'pressure', 'altitude'), **kwargs):
+    """
+    Get Iris 1-dimensional coordinate(s) object(s) from a CTM grid.
+
+    Parameters
+    ----------
+    ctm_grid : string or :class:`pygchem.grid.CTMGrid` instance
+        Name of the CTM grid (model) or CTMGrid object.
+    coord(s) : string or sequence of strings
+        Name(s) of the coordinate(s) to return.
+
+    Returns
+    -------
+    coords
+        a :class:`iris.coords.DimCoord` object or a list of
+        :class:`iris.coords.DimCoord` objects (same order than specified
+        in `coord`). May return None if `ctm_grid` has no vertical layers.
+
+    Other Parameters
+    ----------------
+    **kwargs
+        May be optional parameter(s) for :func:`grid.CTMGrid.from_model`.
+
+    See Also
+    --------
+    :meth:`grid.CTMGrid.get_layers`
+
+    """
+    if isinstance(coord, StringTypes):
+        coord = [coord]
+
+    if not isinstance(ctm_grid, grid.CTMGrid):
+        ctm_grid = grid.CTMGrid.from_model(ctm_grid, **kwargs)
+
+    def _reshape_bounds(bounds_array):
+        """Reshape bounds from shape (Nlayers + 1) to shape (Nlayers, 2)"""
+        return np.column_stack((bounds_array[:-1], bounds_array[1:]))
+
+    coords = dict()
+
+    clon, clat = ctm_grid.lonlat_centers
+    elon, elat = ctm_grid.lonlat_edges
+    elon = _reshape_bounds(elon)
+    elat = _reshape_bounds(elat)
+
+    coords['longitude'] = iris.coords.DimCoord(
+        clon, standard_name="longitude", units="degrees_east", bounds=elon
+    )
+    coords['latitude'] = iris.coords.DimCoord(
+        clat, standard_name="latitude", units="degrees_north", bounds=elat
+    )
+
+    if ctm_grid.Nlayers is not None:
+        levels = np.arange(1, ctm_grid.Nlayers + 1)
+        coords['levels'] = iris.coords.DimCoord(
+            levels, standard_name="model_level_number", units="1"
+        )
+
+        if ctm_grid.hybrid:
+            ceta = ctm_grid.eta_centers
+            eeta = ctm_grid.eta_edges
+            eeta = _reshape_bounds(eeta)
+            coords['eta'] = iris.coords.DimCoord(
+                ceta,
+                var_name="atmosphere_eta_coordinate_approx",
+                units="1",
+                bounds=eeta
+            )
+            coords['sigma'] = None
+        else:
+            csigma = ctm_grid.sigma_centers
+            esigma = ctm_grid.sigma_edges
+            esigma = _reshape_bounds(esigma)
+            coords['sigma'] = iris.coords.DimCoord(
+                csigma,
+                var_name="atmosphere_sigma_coordinate_approx",
+                units="1",
+                bounds=esigma
+            )
+            coords['eta'] = None
+
+        cpress = ctm_grid.pressure_centers
+        epress = ctm_grid.pressure_edges
+        epress = _reshape_bounds(epress)
+        coords['pressure'] = iris.coords.DimCoord(
+            cpress,
+            var_name="atmosphere_hybrid_sigma_pressure_coordinate_approx",
+            units="hPa",
+            bounds=epress
+        )
+
+        cheight = ctm_grid.altitude_centers
+        eheight = ctm_grid.altitude_edges
+        eheight = _reshape_bounds(eheight)
+        coords['altitude'] = iris.coords.DimCoord(
+            cheight,
+            var_name="atmosphere_hybrid_height_coordinate_approx",
+            units="km",
+            bounds=eheight
+        )
+
+    else:
+        for k in ['levels', 'sigma', 'eta', 'pressure', 'altitude']:
+            coords[k] = None
+
+    if len(coord) == 1:
+        return coords[coord[0]]
+    else:
+        return [coords[k] for k in coord]
+
 
 def gcgrid_2_coords(model_name, model_resolution,
                     region_box=None):
@@ -240,11 +579,11 @@ def gcgrid_2_coords(model_name, model_resolution,
     if region_box is not None:
         imin, imax, jmin, jmax, lmin, lmax = region_box
 
-        lon_points = lon_points[imin-1:imax]
-        lon_bounds = lon_bounds[imin-1:imax]
+        lon_points = lon_points[imin - 1:imax]
+        lon_bounds = lon_bounds[imin - 1:imax]
 
-        lat_points = lat_points[jmin-1:jmax]
-        lat_bounds = lat_bounds[jmin-1:jmax]
+        lat_points = lat_points[jmin - 1:jmax]
+        lat_bounds = lat_bounds[jmin - 1:jmax]
 
         levels = np.arange(lmin, lmax + 1)
 
@@ -253,59 +592,106 @@ def gcgrid_2_coords(model_name, model_resolution,
     )
 
     i_coord = iris.coords.DimCoord(lon_points,
-                       bounds=lon_bounds,
-                       standard_name="longitude",
-                       var_name="longitude",
-                       units="degrees_east",
-                       coord_system=spherical_geocs)
+                                   bounds=lon_bounds,
+                                   standard_name="longitude",
+                                   var_name="longitude",
+                                   units="degrees_east",
+                                   coord_system=spherical_geocs)
 
     j_coord = iris.coords.DimCoord(lat_points,
-                       bounds=lat_bounds,
-                       standard_name="latitude",
-                       var_name="latitude",
-                       units="degrees_north",
-                       coord_system=spherical_geocs)
+                                   bounds=lat_bounds,
+                                   standard_name="latitude",
+                                   var_name="latitude",
+                                   units="degrees_north",
+                                   coord_system=spherical_geocs)
 
     l_coord = iris.coords.DimCoord(levels,
-                       standard_name="model_level_number",
-                       var_name="model_level_number",
-                       units="1")
+                                   standard_name="model_level_number",
+                                   var_name="model_level_number",
+                                   units="1")
 
     return i_coord, j_coord, l_coord
 
 
+def levels_as_aux_factories(grid_box_height, bottom_lev_pressure,
+                            orography=None):
+    """
+    Return auxiliary coordinate factories for vertical levels from pressure
+    and grid box height variables given as Iris cubes.
+
+    Parameters
+    ----------
+    grid_box_height : :class:`iris.cube.Cube` instance
+        Height of the grid boxes. Does correspond to the
+        **BXHEIGHT** diagnostic of the **BXHGHT-$** category.
+    bottom_lev_pressure : :class:`iris.cube.Cube` instance
+        Pressure at the bottom edge of the grid boxes. Does correspond to the
+        **PSURF** diagnostic of the **PEDGE-$** category.
+    orography : :class:`iris.cube.Cube` instance or None
+        Orography (height of the Geoid) (optional).
+
+    Returns
+    -------
+    A list of :class:`iris.aux_factory.AuxCoordFactory` subclasses which
+    can be used to build auxiliary vertical coordinates on demand (e.g.,
+    atmosphere_sigma_coordinate, atmosphere_hybrid_height_coordinate,
+    atmosphere_hybrid_sigma_pressure_coordinate...).
+
+    Only 'atmosphere_hybrid_sigma_pressure_coordinate' is currently
+    implemented !
+
+    Notes
+    -----
+    All input cubes must be compatible.
+
+    `bottom_lev_pressure` is used to get only surface pressures.
+
+    """
+
+    height_model = grid_box_height.attributes.get('modelname')
+    press_model = bottom_lev_pressure.attributes.get('modelname')
+
+    if height_model != press_model:
+        raise iris.exceptions.InvalidCubeError("grid_box_height and "
+                                               "bottom_lev_pressure must "
+                                               "correspond to the same model")
+
+    else:
+        ctm_grid = grid.CTMGrid.from_model(height_model)
+
+    # Hybrid Pressure Factory
+    # TODO:
+    raise exceptions.NotYetImplementedError()
+
+
 def get_altitude_coord(gridbox_heights, topography):
     """
-    Compute the altitude (elevation a.s.l) coordinate
+    Compute the 'real' altitude (elevation a.s.l) coordinate
     from grid box heights and topography.
 
     Parameters
     ----------
     gridbox_heights : :class:`iris.cube.Cube`
-        a 1-d, 2-d, 3-d or 4-d cube.
-        The cube must have at least 'longitude',
-        'latitude' and 'model_level_number' coordinates.
-        'longitude' and 'latitude' can be either
-        1-dimensional or scalar.
-        'model_level_number' must be 1-dimensional and
-        should include all vertical levels.
+        a 1-d, 2-d, 3-d or 4-d cube representing the grid-box heights
+        diagnostic.
+        The cube must have at least 'longitude', 'latitude' and
+        'model_level_number' coordinates. 'longitude' and 'latitude' can be
+        either 1-dimensional or scalar. 'model_level_number' must be
+        1-dimensional and should include all vertical levels.
     topography : :class:`iris.cube.Cube`
-        a 2D cube, which must have 'longitude' and
-        'latitude' dimension coordinates. `topography`
-        must at least cover the horizontal extent of
-        `gridbox_heights` and have a compatible horizontal
-        grid (i.e., coordinates points and bounds must match).
+        a 2D cube, which must have 'longitude' and 'latitude' dimension
+        coordinates. Must at least cover the horizontal extent of
+        `gridbox_heights` and have a compatible horizontal grid (i.e.,
+        coordinates points and bounds must match).
 
     Returns
     -------
-    a :class:`iris.AuxCoord` object
-        An auxilliary coordinate that contains
-        space and time-dependent altitude values for
-        the points and bounds of each grid cell.
-        The coordinate has the same dimensions and
-        the same units than the `gridbox_heights` cube.
-        The coordinate also contains attributes of
-        the `topography` cube.
+    altitude_coord
+        An auxiliary coordinate (:class:`iris.AuxCoord`) that contains
+        space and time-dependent altitude values for the points and bounds of
+        each grid cell. The coordinate has the same dimensions and the same
+        units than the `gridbox_heights` cube. The coordinate also contains
+        the attributes of the `topography` cube.
 
     Examples
     --------
@@ -347,7 +733,7 @@ def get_altitude_coord(gridbox_heights, topography):
                                            'latitude')
 
         if (topo_lon_coord in topo_dim_coords
-            and topo_lat_coord in topo_dim_coords):
+                and topo_lat_coord in topo_dim_coords):
 
             set_dim_order(topography_subset, ['longitude', 'latitude'])
             dim_map = (gbh_lon_dim, gbh_lat_dim)
@@ -366,14 +752,14 @@ def get_altitude_coord(gridbox_heights, topography):
                                      'model_level_number')
 
     # calculate altitude points and bounds values
-    altitude_ubnd = np.cumsum(gridbox_heights.data, axis=level_dim) + \
-                    base_level_altitude
+    altitude_ubnd = (np.cumsum(gridbox_heights.data, axis=level_dim) +
+                     base_level_altitude)
     altitude_lbnd = altitude_ubnd - gridbox_heights.data
     altitude_lbnd[..., 1:] = altitude_ubnd[..., :-1]  # force contiguous bounds
     altitude_points = (altitude_lbnd + altitude_ubnd) / 2.
 
-    altitude_bounds = np.concatenate((altitude_lbnd[...,np.newaxis],
-                                      altitude_ubnd[...,np.newaxis]),
+    altitude_bounds = np.concatenate((altitude_lbnd[..., np.newaxis],
+                                      altitude_ubnd[..., np.newaxis]),
                                      axis=-1)
 
     # create and return the iris coordinate object
@@ -397,38 +783,31 @@ def compute_cell_volumes(cube, lon_coord='longitude', lat_coord='latitude',
     Parameters
     ----------
     cube : :class:`iris.cube.Cube` object
-        a cube that contain the latitude, longitude and
-        height coordinates.
+        a cube that contain the latitude, longitude and height coordinates.
     lon_coord : string or :class:`iris.coords.Coord` object
-        longitude horizontal coordinate (1-dimensional
-        or scalar), expressed either in degrees or radians
-        (must have bounds).
+        longitude horizontal coordinate (1-dimensional or scalar), expressed
+        either in degrees or radians (must have bounds).
     lat_coord : string or :class:`iris.coords.Coord` object
-        latitude horizontal coordinate (1-dimensional
-        or scalar), expressed either in degrees or radians
-        (must have bounds).
+        latitude horizontal coordinate (1-dimensional or scalar), expressed
+        either in degrees or radians (must have bounds).
     height_coord : string or :class:`iris.coords.Coord` object
-        altitude/height vertical coordinate.
-        This coordinate must also have bounds.
-        It can be either 1-dimensional or multi-dimensional.
+        altitude/height vertical coordinate. This coordinate must also
+        have bounds. It can be either 1-dimensional or multi-dimensional.
     as_new_cube : bool
-        if True, returns a new cube'. Otherwise it adds
-        to `cube` the computed volumes values as a new
-        auxilliary coordinate.
+        if True, returns a new cube'. Otherwise it adds to `cube` the computed
+        volumes values as a new auxiliary coordinate.
 
     Raises
     ------
     :err:`iris.exceptions.CoordinateMultiDimError`
-        if latitude and/or longitude coordinates
-        are multi-dimensional.
+        if latitude and/or longitude coordinates are multi-dimensional.
     :err:`iris.exceptions.CoordinateNotRegularError`
-        if latitude and/or longitude coordinates
-        don't use a spherical coordinate system.
+        if latitude and/or longitude coordinates don't use a spherical
+        coordinate system.
 
     Notes
     -----
-    the altitude coordinate should be orthogonal to lat/lon
-    coordinates.
+    the altitude coordinate should be orthogonal to lat/lon coordinates.
 
     Volumes are calculated for each cell as:
 
@@ -440,14 +819,12 @@ def compute_cell_volumes(cube, lon_coord='longitude', lat_coord='latitude',
         \rho_{1}^{3} \cos{\left (\phi_{0} \right )} +
         \rho_{1}^{3} \cos{\left (\phi_{1} \right )}\right)
 
-    where :math:`\rho_0` and :math:`\rho_1` are the altitude
-    bounds (+ earth radius), :math:`\phi_0` and :math:`\phi_1`
-    are the latitude bounds and :math:`\theta_0` and :math:`\theta_1`
-    are the longitude bounds.
+    where :math:`\rho_0` and :math:`\rho_1` are the altitude bounds
+    (+ earth radius), :math:`\phi_0` and :math:`\phi_1` are the latitude bounds
+    and :math:`\theta_0` and :math:`\theta_1` are the longitude bounds.
 
-    Uses earth radius from the lat/lon coordinates,
-    if present and spherical. Defaults to
-    iris.analysis.cartography.DEFAULT_SPHERICAL_EARTH_RADIUS.
+    Uses earth radius from the lat/lon coordinates, if present and spherical.
+    Defaults to iris.analysis.cartography.DEFAULT_SPHERICAL_EARTH_RADIUS.
 
     """
     # get coordinate objects
@@ -473,7 +850,7 @@ def compute_cell_volumes(cube, lon_coord='longitude', lat_coord='latitude',
     height_coord_m = height_coord.copy()
     height_coord_m.convert_units('m')
 
-    out_units = height_coord.units**3
+    out_units = height_coord.units ** 3
 
     # altitude -> radius (in meters)
     if lon_coord.coord_system is not None:
@@ -521,11 +898,11 @@ def compute_cell_volumes(cube, lon_coord='longitude', lat_coord='latitude',
     theta_0, theta_1 = lon_bounds[..., 0], lon_bounds[..., 1]
     rho_0, rho_1 = height_bounds[..., 0], height_bounds[..., 1]
 
-    volume = rho_0**3 * np.cos(phi_0) - \
-             rho_0**3 * np.cos(phi_1) - \
-             rho_1**3 * np.cos(phi_0) + \
-             rho_1**3 * np.cos(phi_1)
-    volume *= 1./3. * (theta_0 - theta_1)
+    volume = (rho_0 ** 3 * np.cos(phi_0) -
+              rho_0 ** 3 * np.cos(phi_1) -
+              rho_1 ** 3 * np.cos(phi_0) +
+              rho_1 ** 3 * np.cos(phi_1))
+    volume *= 1. / 3. * (theta_0 - theta_1)
 
     # convert volume units
     m = iris.unit.Unit('m^3')
@@ -544,10 +921,10 @@ def compute_cell_volumes(cube, lon_coord='longitude', lat_coord='latitude',
 
     else:
         cube.add_aux.coord(iris.coords.AuxCoord(
-            volume,
-            long_name=v_long_name,
-            units=out_units,
-            data_dims=range(0, height_coord.ndim)))
+                           volume,
+                           long_name=v_long_name,
+                           units=out_units),
+                           data_dims=range(0, height_coord.ndim))
 
 
 def compute_tracer_columns(mixing_ratio, n_air, z_coord,
@@ -610,7 +987,7 @@ def compute_tracer_columns(mixing_ratio, n_air, z_coord,
             )
 
         map_height_dim = mixing_ratio.coord_dims(z_coord)
-        heights_data = z_coord.bounds[:,1] - z_coord.bounds[:,0]
+        heights_data = z_coord.bounds[:, 1] - z_coord.bounds[:, 0]
         heights_data = iris.util.broadcast_to_shape(heights_data,
                                                     mixing_ratio.shape,
                                                     map_height_dim)
@@ -690,8 +1067,8 @@ def _map_exchange_vertical(src_or_dst_data,
     # 2-d boolean array (rows are exchange cells
     # and cols are source/destination grid cells)
     # True if exchange cell match with src or dst cell
-    is_in_cell = ((points[:,np.newaxis] > bounds[:,0]) &
-                  (points[:,np.newaxis] < bounds[:,1]))
+    is_in_cell = ((points[:, np.newaxis] > bounds[:, 0]) &
+                  (points[:, np.newaxis] < bounds[:, 1]))
 
     # a cell of the exchange should have only one
     # corresponding cell in the source/destination grid
@@ -746,7 +1123,7 @@ def regrid_conservative_vertical(src_cube, dst_grid_cube,
     A new :class:`iris.cube.Cube` object
         a copy of `dst_grid_cube` with
         the regridded data of `src_cube`.
-        Auxilliary / scalar coordinates and
+        Auxiliary / scalar coordinates and
         attributes of `src_cube` will be copied.
 
     Notes
@@ -772,10 +1149,10 @@ def regrid_conservative_vertical(src_cube, dst_grid_cube,
                                                   dst_z_coord)
 
     # compute cell heights of each grid
-    src_heights = src_z_coord.bounds[:,1] - src_z_coord.bounds[:,0]
-    dst_heights = dst_z_coord.bounds[:,1] - dst_z_coord.bounds[:,0]
-    exchange_heights = exchange_z_coord.bounds[:,1] - \
-                       exchange_z_coord.bounds[:,0]
+    src_heights = src_z_coord.bounds[:, 1] - src_z_coord.bounds[:, 0]
+    dst_heights = dst_z_coord.bounds[:, 1] - dst_z_coord.bounds[:, 0]
+    exchange_heights = (exchange_z_coord.bounds[:, 1] -
+                        exchange_z_coord.bounds[:, 0])
 
     # generate arbitray levels for the destination grid
     # (used for further aggregation - summing - of the exchange grid
@@ -812,13 +1189,13 @@ def regrid_conservative_vertical(src_cube, dst_grid_cube,
     # finally get data values on the destination grid
     # (sum data of overlapping cells of the exchange grid
     # and apply the overlap tolerance)
-    levels_mask = dst_levels[:,np.newaxis] == dst_levels_mapped[np.newaxis,:]
+    levels_mask = dst_levels[:, np.newaxis] == dst_levels_mapped[np.newaxis, :]
 
-    dst_data = np.nansum((exchange_data[np.newaxis,:] * levels_mask),
+    dst_data = np.nansum((exchange_data[np.newaxis, :] * levels_mask),
                          axis=1)
 
     valid_heights = np.where(np.isnan(exchange_data), np.nan, exchange_heights)
-    overlap_heights = np.nansum((valid_heights[np.newaxis,:] * levels_mask),
+    overlap_heights = np.nansum((valid_heights[np.newaxis, :] * levels_mask),
                                 axis=1)
     overlap_heights_relative = overlap_heights / dst_heights
     nan_indices = np.nonzero(overlap_heights_relative < overlap_tol)

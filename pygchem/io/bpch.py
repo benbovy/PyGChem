@@ -156,6 +156,8 @@ def read_bpch(filename, mode='rb', skip_data=True,
                     cat.offset + int(number)
                 )
                 diag_attr = diag.to_dict()
+                if not unit.strip():            # unit may be empty in bpch
+                    unit = diag_attr['unit']    # but not in tracerinfo
             except exceptions.SelectionMismatchError:
                 diag = {'name': '', 'scale': 1}
                 diag_attr = 'no additional metadata found for tracer/diagnostic'

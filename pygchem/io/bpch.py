@@ -15,7 +15,7 @@ import os
 
 import numpy as np
 
-from pygchem.datafield_backends.diagnostics import CTMDiagnosticInfo
+from pygchem.diagnostics import CTMDiagnosticInfo
 from pygchem.utils import uff, timeutil, exceptions
 
 

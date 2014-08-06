@@ -104,8 +104,6 @@ def read_bpch(filename, mode='rb', skip_data=True,
     
     Returns
     -------
-    bpch_file
-        the open file instance (:class:`pygchem.utils.uff.FortranFile` object).
     filetype
         bpch file type identifier (given in the file's header)
     filetitle

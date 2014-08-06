@@ -112,7 +112,8 @@ def read_bpch(filename, mode='rb', skip_data=True,
         title (given in the file's header)
     datablocks
         the list of data blocks, i.e., dictionaries with data block metadata
-        and data (or a :class:`BPCHDataProxy` instance if `skip_data` is True).
+        and data as a :class:`numpy.ndarray` object or a :class:`BPCHDataProxy`
+        instance if `skip_data` is True.
 
     """
     if mode != 'a' and not mode.endswith('b'):

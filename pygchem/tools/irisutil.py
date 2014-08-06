@@ -115,12 +115,13 @@ def add_dim_aux_coord(cube, coord, dim, err='error'):
         if err == 'error':
             raise
         elif err == 'warning':
-            warnings.warn("{classname} {coordname} could not be assigned to "
-                          "cube {cubename} at dimension {dim}"
-                          .format(classname=coord.__class__.__name__,
-                                  coordname=coord.name(),
-                                  cubename=cube.name(),
-                                  dim=dim))
+            warn_msg = ("{classname} '{coordname}' could not be mapped to "
+                        "cube '{cubename}', dimension {dim}"
+                        .format(classname=coord.__class__.__name__,
+                                coordname=coord.name(),
+                                cubename=cube.name(),
+                                dim=dim))
+            warnings.warn(warn_msg, RuntimeWarning)
 
 
 def permute_dim_aux_coords(cube, dim_coord, aux_coord):
@@ -228,8 +229,8 @@ def _datablock_to_cube(datablock, dim_coords_and_dims=None,
             cube.add_aux_factory(aux_factory)
 
     # time coordinates
-    point = timeutil.time2tau(datablock.times[0])
-    bounds = [timeutil.time2tau(time) for time in datablock.times]
+    point = timeutil.time2tau(datablock['times'][0])
+    bounds = [timeutil.time2tau(t) for t in datablock['times']]
     time_coord = iris.coords.DimCoord(points=point,
                                       bounds=bounds,
                                       standard_name='time',
@@ -248,7 +249,7 @@ def _datablock_to_cube(datablock, dim_coords_and_dims=None,
             cube.units = conform_units
         except ValueError:
             warnings.warn("Invalid udunits2 '{0}'".format(units))
-        cube.attributes["ctm_units"] = units
+    cube.attributes["ctm_units"] = units
 
     # attributes
     if isinstance(datablock['tracerinfo'], dict):

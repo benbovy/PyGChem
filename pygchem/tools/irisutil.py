@@ -32,7 +32,6 @@ from pygchem.tools import ctm2cf
 from pygchem.utils import exceptions, timeutil
 
 
-
 # -----------------------------------------------------------------------------
 # Generic functions not specific to CTM datasets
 #------------------------------------------------------------------------------

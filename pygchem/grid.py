@@ -32,7 +32,7 @@ import numpy as np
 
 from pygchem.tools import atm
 from pygchem.utils.custom_decorators import classproperty
-from pygchem.utils.numpy_addon import broadcast_1d_array
+from pygchem.utils.numpyutil import broadcast_1d_array
 
 
 # pre-defined sigma coordinates

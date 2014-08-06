@@ -41,5 +41,9 @@ nosetests.xml
 .pydevproject
 .settings
 
+# IPython Notebooks
+.ipynb_checkpoints
+examples/.ipynb_checkpoints
+
 # PyCharm
 .idea

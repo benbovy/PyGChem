@@ -16,7 +16,8 @@ import os
 import numpy as np
 
 from pygchem.diagnostics import CTMDiagnosticInfo
-from pygchem.utils import uff, timeutil, exceptions
+from pygchem.tools import timeutil
+from pygchem.utils import uff, exceptions
 
 
 FILETYPE02 = "CTM bin 02"

@@ -28,8 +28,9 @@ import iris.analysis.cartography
 
 from pygchem import grid
 from pygchem.io import bpch
-from pygchem.tools import ctm2cf
-from pygchem.utils import exceptions, timeutil
+from pygchem.tools import ctm2cf, timeutil
+from pygchem.utils import exceptions
+
 
 
 # -----------------------------------------------------------------------------
@@ -177,8 +178,8 @@ def remove_dim_aux_coords(cube, dimensions):
 #------------------------------------------------------------------------------
 
 # time encoding for bpch files
-CTM_TIME_UNIT = iris.unit.Unit('hours since 1985-01-01 00:00:00',
-                               calendar=iris.unit.CALENDAR_STANDARD)
+CTM_TIME_UNIT_IRIS = iris.unit.Unit(timeutil.CTM_TIME_UNIT_STR,
+                                    calendar=iris.unit.CALENDAR_STANDARD)
 
 
 def _datablock_to_cube(datablock, dim_coords_and_dims=None,
@@ -233,7 +234,7 @@ def _datablock_to_cube(datablock, dim_coords_and_dims=None,
     time_coord = iris.coords.DimCoord(points=point,
                                       bounds=bounds,
                                       standard_name='time',
-                                      units=CTM_TIME_UNIT)
+                                      units=CTM_TIME_UNIT_IRIS)
     cube.add_aux_coord(time_coord)
 
     # units
@@ -340,6 +341,9 @@ def datablocks_to_cubes(datablocks, dim_coords_and_dims=None,
         return cube_list
 
 
+# TODO: write function cubes_to_datablocks()  (for writing bpch files)
+
+
 #-----------------------------------------------------------------------------
 # Misc. fix functions
 #-----------------------------------------------------------------------------
@@ -429,8 +433,8 @@ def ppbC_2_ppbv(cube):
 # Functions for computing grid-related data and other additional data
 #-----------------------------------------------------------------------------
 
-def coord_from_grid(ctm_grid, coord=('longitude', 'latitude', 'levels',
-                    'sigma', 'eta', 'pressure', 'altitude'), **kwargs):
+def coord_from_grid(ctm_grid, coord=('longitude', 'latitude', 'levels'),
+                    region_box=None, **kwargs):
     """
     Get Iris 1-dimensional coordinate(s) object(s) from a CTM grid.
 
@@ -438,8 +442,13 @@ def coord_from_grid(ctm_grid, coord=('longitude', 'latitude', 'levels',
     ----------
     ctm_grid : string or :class:`pygchem.grid.CTMGrid` instance
         Name of the CTM grid (model) or CTMGrid object.
-    coord(s) : string or sequence of strings
-        Name(s) of the coordinate(s) to return.
+    coord : string or sequence of strings
+        Specify the coordinate(s) to return (valid names are 'longitude',
+        'latitude', 'levels', 'sigma', 'eta', 'pressure' and 'altitude').
+    region_box: ((imin, imax), (jmin, jmax), (lmin, lmax)) or None
+        If not None, the returned coordinates will be limited to the region
+        box defined by the given indices of grid cell centers
+        (i: longitude, j: latitude, l: vertical levels).
 
     Returns
     -------
@@ -458,87 +467,117 @@ def coord_from_grid(ctm_grid, coord=('longitude', 'latitude', 'levels',
     :meth:`grid.CTMGrid.get_layers`
 
     """
+    vcoord_names = ('levels', 'sigma', 'eta', 'pressure', 'altitude')
+    valid_coord_names = vcoord_names + ('longitude', 'latitude')
+
     if isinstance(coord, StringTypes):
         coord = [coord]
+    for c in coord:
+        if c not in valid_coord_names:
+            raise ValueError("'{0}' is not a valid coordinate name".format(c))
 
     if not isinstance(ctm_grid, grid.CTMGrid):
         ctm_grid = grid.CTMGrid.from_model(ctm_grid, **kwargs)
 
-    def _reshape_bounds(bounds_array):
-        """Reshape bounds from shape (Nlayers + 1) to shape (Nlayers, 2)"""
-        return np.column_stack((bounds_array[:-1], bounds_array[1:]))
+    # verify if `ctm_grid` is compatible with requested coordinates
+    if ctm_grid.Nlayers is None and any(c in vcoord_names for c in coord):
+        raise ValueError("vertical coordinate(s) requested but the '{0}' grid "
+                         "has no defined vertical layers"
+                         .format(ctm_grid.model))
+    if 'sigma' in coord and ctm_grid.hybrid:
+        raise ValueError("sigma coordinate requested but the '{0}' grid have "
+                         "hybrid vertical layers ".format(ctm_grid.model))
+    if 'eta' in coord and not ctm_grid.hybrid:
+        raise ValueError("eta coordinate requested but the '{0}' grid doesn't "
+                         "have hybrid vertical layers ".format(ctm_grid.model))
 
-    coords = dict()
+    # create region box slices
+    if region_box is not None:
+        lon_minmax, lat_minmax, lev_minmax = region_box
+        make_slices = lambda minmax: (slice(*minmax),
+                                      slice(minmax[0], minmax[1] + 1))
+        clon_slice, elon_slice = make_slices(lon_minmax)
+        clat_slice, elat_slice = make_slices(lat_minmax)
+        clev_slice, elev_slice = make_slices(lev_minmax)
+    else:
+        clon_slice = elon_slice = np.s_[:]
+        clat_slice = elat_slice = np.s_[:]
+        clev_slice = elev_slice = np.s_[:]
 
-    clon, clat = ctm_grid.lonlat_centers
-    elon, elat = ctm_grid.lonlat_edges
-    elon = _reshape_bounds(elon)
-    elat = _reshape_bounds(elat)
+    # Reshape coordinate bounds from shape (n+1) to shape (n, 2).
+    reshape_bounds = lambda bounds: np.column_stack((bounds[:-1], bounds[1:]))
 
-    coords['longitude'] = iris.coords.DimCoord(
-        clon, standard_name="longitude", units="degrees_east", bounds=elon
-    )
-    coords['latitude'] = iris.coords.DimCoord(
-        clat, standard_name="latitude", units="degrees_north", bounds=elat
-    )
+    # create Iris coordinate object(s)
+    iris_coords = dict()
 
-    if ctm_grid.Nlayers is not None:
-        levels = np.arange(1, ctm_grid.Nlayers + 1)
-        coords['levels'] = iris.coords.DimCoord(
-            levels, standard_name="model_level_number", units="1"
+    if 'longitude' in coord or 'latitude' in coord:
+        clon, clat = ctm_grid.lonlat_centers
+        elon, elat = ctm_grid.lonlat_edges
+        elon = reshape_bounds(elon[elon_slice])
+        elat = reshape_bounds(elat[elat_slice])
+
+        spherical_geocs = iris.coord_systems.GeogCS(
+            iris.analysis.cartography.DEFAULT_SPHERICAL_EARTH_RADIUS
+        )
+        iris_coords['longitude'] = iris.coords.DimCoord(
+            clon[clon_slice], standard_name='longitude', var_name='longitude',
+            units='degrees_east', bounds=elon, coord_system=spherical_geocs
+        )
+        iris_coords['latitude'] = iris.coords.DimCoord(
+            clat[clat_slice], standard_name='latitude', var_name='latitude',
+            units='degrees_north', bounds=elat, coord_system=spherical_geocs
         )
 
-        if ctm_grid.hybrid:
-            ceta = ctm_grid.eta_centers
-            eeta = ctm_grid.eta_edges
-            eeta = _reshape_bounds(eeta)
-            coords['eta'] = iris.coords.DimCoord(
-                ceta,
-                var_name="atmosphere_eta_coordinate_approx",
-                units="1",
-                bounds=eeta
-            )
-            coords['sigma'] = None
-        else:
-            csigma = ctm_grid.sigma_centers
-            esigma = ctm_grid.sigma_edges
-            esigma = _reshape_bounds(esigma)
-            coords['sigma'] = iris.coords.DimCoord(
-                csigma,
-                var_name="atmosphere_sigma_coordinate_approx",
-                units="1",
-                bounds=esigma
-            )
-            coords['eta'] = None
+    if 'levels' in coord:
+        levels = np.arange(1, ctm_grid.Nlayers + 1)
+        iris_coords['levels'] = iris.coords.DimCoord(
+            levels[clev_slice], standard_name="model_level_number",
+            var_name="model_level_number", units="1"
+        )
 
+    if 'eta' in coord and ctm_grid.hybrid:
+        ceta = ctm_grid.eta_centers
+        eeta = ctm_grid.eta_edges
+        eeta = reshape_bounds(eeta[elev_slice])
+        iris_coords['eta'] = iris.coords.DimCoord(
+            ceta[clev_slice], var_name="atmosphere_eta_coordinate_approx",
+            units="1", bounds=eeta
+        )
+
+    if 'sigma' in coord and not ctm_grid.hybrid:
+        csigma = ctm_grid.sigma_centers
+        esigma = ctm_grid.sigma_edges
+        esigma = reshape_bounds(esigma[elev_slice])
+        iris_coords['sigma'] = iris.coords.DimCoord(
+            csigma[clev_slice], var_name="atmosphere_sigma_coordinate_approx",
+            units="1", bounds=esigma
+        )
+
+    if 'pressure' in coord:
         cpress = ctm_grid.pressure_centers
         epress = ctm_grid.pressure_edges
-        epress = _reshape_bounds(epress)
-        coords['pressure'] = iris.coords.DimCoord(
-            cpress,
+        epress = reshape_bounds(epress[elev_slice])
+        iris_coords['pressure'] = iris.coords.DimCoord(
+            cpress[clev_slice],
             var_name="atmosphere_hybrid_sigma_pressure_coordinate_approx",
-            units="hPa",
-            bounds=epress
+            units="hPa", bounds=epress
         )
 
+    if 'altitude' in coord:
         cheight = ctm_grid.altitude_centers
         eheight = ctm_grid.altitude_edges
-        eheight = _reshape_bounds(eheight)
-        coords['altitude'] = iris.coords.DimCoord(
-            cheight,
+        eheight = reshape_bounds(eheight[elev_slice])
+        iris_coords['altitude'] = iris.coords.DimCoord(
+            cheight[clev_slice],
             var_name="atmosphere_hybrid_height_coordinate_approx",
             units="km",
             bounds=eheight
         )
 
-    else:
-        for k in ['levels', 'sigma', 'eta', 'pressure', 'altitude']:
-            coords[k] = None
-
     if len(coord) == 1:
-        return coords[coord[0]]
+        return iris_coords[coord[0]]
     else:
-        return [coords[k] for k in coord]
+        return [iris_coords[k] for k in coord]
 
 
 def gcgrid_2_coords(model_name, model_resolution,
@@ -546,6 +585,8 @@ def gcgrid_2_coords(model_name, model_resolution,
     """
     Get the X,Y,Z coordinates of the GEOS-Chem grid given
     by `model_name` and `model_resolution`.
+
+    DEPRECIATED: will be removed, use :func:`coord_from_grid` instead.
 
     Parameters
     ----------

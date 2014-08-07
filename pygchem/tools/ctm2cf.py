@@ -19,6 +19,11 @@ References:
 
 import string
 
+from pygchem.tools import timeutil
+
+
+# time reference for CTM datafields
+CTM_TIME_UNIT_STR = timeutil.CTM_TIME_UNIT_STR
 
 # unit names: CTM -> udunits2
 UNITS_MAP_CTM2CF = (

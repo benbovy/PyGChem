@@ -22,6 +22,7 @@ from pygchem.utils import uff, timeutil, exceptions
 FILETYPE02 = "CTM bin 02"
 FILETYPE4D = "CTM bin 4D"
 DEFAULT_TITLE = "GEOS-CHEM binary punch file v. 2.0"
+ND49_TITLE = "GEOS-CHEM DIAG49 instantaneous timeseries"
 
 
 class BPCHDataProxy(object):

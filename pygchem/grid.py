@@ -246,10 +246,10 @@ class CTMGrid(object):
         Nlon = int(360. / rlon)
         Nlat = int(180. / rlat) + self.halfpolar
         
-        elon = np.arange(Nlon + 1) * rlon - np.array(180.)
-        elon -= rlon / 2. * self.center180
-        elat = np.arange(Nlat + 1) * rlat - np.array(90.)
-        elat -= rlat / 2. * self.halfpolar
+        elon = (np.arange(Nlon + 1) * rlon - np.array(180.)
+                - rlon / 2. * self.center180)
+        elat = (np.arange(Nlat + 1) * rlat - np.array(90.)
+                - rlat / 2. * self.halfpolar)
         elat[0] = -90.
         elat[-1] = 90.
 

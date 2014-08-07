@@ -18,6 +18,7 @@ from __future__ import absolute_import
 import glob
 from types import StringTypes
 
+import numpy as np
 import iris
 import iris.unit
 import iris.coords
@@ -69,9 +70,14 @@ def cubes_from_bpch(filenames, callback=None, **kwargs):
                 leading_datablock['modelname'],
                 resolution=leading_datablock['resolution']
             )
-            lon, lat, lev = irisutil.coord_from_grid(
-                ctm_grid, coord=('longitude', 'latitude', 'levels')
-            )
+            if leading_datablock['origin'] != (1, 1, 1):
+                imin = np.array(leading_datablock['origin']) - 1
+                imax = imin + np.array(leading_datablock['shape'])
+                region_box = zip(imin, imax)
+            else:
+                region_box = None
+            lon, lat, lev = irisutil.coord_from_grid(ctm_grid,
+                                                     region_box=region_box)
 
             for datablock in datablocks:
 
@@ -87,6 +93,10 @@ def cubes_from_bpch(filenames, callback=None, **kwargs):
                     errcoord='pass'
                 )
 
+                # add `filetitle` in the cube's attributes
+                # (commented: may not properly concatenate cubes)
+                #cube.attributes['bpch_title'] = filetitle
+
                 if callback is not None:
                     cube = iris.io.run_callback(callback,
                                                 cube,
@@ -95,8 +105,6 @@ def cubes_from_bpch(filenames, callback=None, **kwargs):
                 if cube is None:
                     continue
                 yield cube
-
-# TODO: custom loaders for ND49, ND50
 
 
 class LeadingLineUff(fp.FileElement):
@@ -134,15 +142,27 @@ bpch_spec_le = fp.FormatSpecification(
 iris.fileformats.FORMAT_AGENT.add_spec(bpch_spec_le)
 # TODO: CTM bin 4D  format
 
+# TODO: write a bpch Saver class (not a priority)
 
 # -----------------------------------------------------------------------------
-# Implementation of CTM datafield classes and functions
+# Wrappers for Iris's load and save functions
 #------------------------------------------------------------------------------
 
 load = iris.load
 load_cube = iris.load_cube
 load_cubes = iris.load_cubes
 load_raw = iris.load_raw
-#load_strict = iris.load_strict    # depreciated
 
 save = iris.save
+
+# TODO: an alternative way to link CTM metadata, other than cube attributes ?
+#   - cube attributes may +- slow the cube creation and concatenation
+#   - CTM metadata related to the geometry, useful because of the metadata
+#     format but duplicates the information in the cube
+#   - possible solution: subclass Cube and CubeList, add specific properties
+#     that link the cube to Diagnostic object and other metadata
+#     (e.g. 'loaded_from_file', 'save_to_file'), and all functions / methods
+#     returning new cube / cubelist overridden to return the subclass
+
+# TODO: emission module, emission fields, scale factor and mask subclasses
+#   - rather than cube with extra attributes.

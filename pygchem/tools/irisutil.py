@@ -255,8 +255,10 @@ def _datablock_to_cube(datablock, dim_coords_and_dims=None,
     if isinstance(datablock['tracerinfo'], dict):
         cube.attributes.update(datablock['tracerinfo'])
         cube.attributes.pop('unit')
-    for attr_name in ('name', 'number', 'category', 'modelname', 'resolution',
-                      'loaded_from_file', 'save_to_file'):
+    # concatenate cubes from multiple bpch files doesn't work with
+    # the attributes 'loaded_from_file', 'save_to_file'
+    # TODO: find a better alternative than discarding theses attributes
+    for attr_name in ('name', 'number', 'category', 'modelname', 'resolution'):
         cube.attributes[attr_name] = datablock.get(attr_name, None)
     cube.attributes.update(kwargs)
 

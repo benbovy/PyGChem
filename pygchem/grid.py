@@ -15,7 +15,7 @@
 A high-level API for handling grids used by GEOS-Chem.
 
 It provides default grid specification for various models and allows to easily
-get the grid coordinates. User-specific grids can also be defined.
+get grid coordinates. User-specific grids can also be defined.
 
 """
 
@@ -27,10 +27,6 @@ from pygchem.utils.numpyutil import broadcast_1d_array
 
 class CTMGrid(object):
     """
-    CTMGrid(model_name, resolution=[5, 4], halfpolar=True, center180=True,
-            hybrid=True, Nlayers=None, Ntrop=None, Psurf=1013.25, Ptop=0.01,
-            description='', model_family='', **kwargs):
-    
     Set-up the grid of a CTM (2)3D model.
 
     Parameters
@@ -81,10 +77,6 @@ class CTMGrid(object):
     ----------
     Attributes are the same than the parameters above, except `model_name`
     which becomes :attr:`model`.
-    
-    Examples
-    --------
-    TODO: 
 
     """
 
@@ -134,7 +126,7 @@ class CTMGrid(object):
         
         Parameters
         ----------
-        model : string
+        model_name : string
             Name the model (see :func:`get_supported_models` for available
             model names).
             Supports multiple formats (e.g., 'GEOS5', 'GEOS-5' or 'GEOS_5').
@@ -246,10 +238,10 @@ class CTMGrid(object):
         Nlon = int(360. / rlon)
         Nlat = int(180. / rlat) + self.halfpolar
         
-        elon = (np.arange(Nlon + 1) * rlon - np.array(180.)
-                - rlon / 2. * self.center180)
-        elat = (np.arange(Nlat + 1) * rlat - np.array(90.)
-                - rlat / 2. * self.halfpolar)
+        elon = np.arange(Nlon + 1) * rlon - np.array(180.)
+        elon -= rlon / 2. * self.center180
+        elat = np.arange(Nlat + 1) * rlat - np.array(90.)
+        elat -= rlat / 2. * self.halfpolar
         elat[0] = -90.
         elat[-1] = 90.
 
@@ -600,5 +592,5 @@ class CTMGrid(object):
 get_supported_models = gridspec.get_supported_models
 get_model_info = gridspec.get_model_info
 
-ctmgrid_from_model = CTMGrid.from_model
-ctmgrid_copy = CTMGrid.copy_from_model
+grid_from_model = CTMGrid.from_model
+grid_copy = CTMGrid.copy_from_model

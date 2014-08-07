@@ -7,6 +7,7 @@
 #
 
 """
-Utility functions and classes that are used in PyGChem.
+Utility functions and classes that are used in PyGChem, but which are usually
+of no interest to users.
 
 """

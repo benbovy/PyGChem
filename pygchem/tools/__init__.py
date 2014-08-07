@@ -7,9 +7,12 @@
 #
 
 """
-Toolbox which provide miscellaneous functions organized in several
-modules following their usage or their external dependencies.
+Utility functions and classes that are used by other modules of PyGChem and
+which may present some interest to the user.
+
+This acts as a toolbox gathering miscellaneous functions organized in several
+modules depending on their usage or their external dependencies.
 
 """
 
-__all__ = ["atm", ]
+__all__ = ['atm', 'ctm2cf', 'gridspec', 'irisutil', 'timeutil']

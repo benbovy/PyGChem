@@ -189,7 +189,7 @@ def _datablock_to_cube(datablock, dim_coords_and_dims=None,
     """
     Create a :class:`iris.cubes.Cube` object given a datablock dict.
     """
-    # TODO: cell methods
+    # TODO: cell methods, aux_factories
 
     # Create cube with data or data proxy, but no metadata
     if isinstance(datablock['data'], bpch.BPCHDataProxy):
@@ -199,7 +199,8 @@ def _datablock_to_cube(datablock, dim_coords_and_dims=None,
     cube = iris.cube.Cube(data)
 
     # set the cube's name ('name_category')
-    name = "_".join([datablock['name'], datablock['category']])
+    name = "__".join([datablock['category'], datablock['name']])
+    name = ctm2cf.get_valid_varname(name)
     cube.rename(name)
 
     # set coordinates from datablock metadata

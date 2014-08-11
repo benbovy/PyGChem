@@ -82,7 +82,7 @@ def get_cfcompliant_units(units, prefix='', suffix=''):
     
     Notes
     -----
-    This function only relies on the table stored in :data:`UNITS_MAP_CTM2CF`.
+    This function only relies on the table stored in :attr:`UNITS_MAP_CTM2CF`.
     Therefore, the units string returned by this function is not certified to
     be compatible with udunits2.
     
@@ -102,3 +102,33 @@ def get_cfcompliant_units(units, prefix='', suffix=''):
         compliant_units = string.replace(compliant_units, gcunits, udunits)
     
     return prefix + compliant_units + suffix
+
+
+VARNAME_MAP_CHAR = (
+    ('$', 'S'),
+    (':', '_'),
+    ('=', '_')
+)
+
+
+def get_valid_varname(varname):
+    """
+    Replace characters (e.g., ':', '$', '=') of a variable name, which
+    may cause problems when using it (CF-)netCDF based packages.
+
+    Parameters
+    ----------
+    varname : string
+        variable name.
+
+    Notes
+    -----
+    Characters replacement is based on the table stored in
+    :attr:`VARNAME_MAP_CHAR`.
+
+    """
+    vname = varname
+    for s, r in VARNAME_MAP_CHAR:
+        vname = vname.replace(s, r)
+
+    return vname

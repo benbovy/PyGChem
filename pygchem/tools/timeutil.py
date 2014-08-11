@@ -13,6 +13,8 @@ Miscellaneous routine(s) for time iterations and conversions.
 
 import datetime
 
+from dateutil.relativedelta import relativedelta
+
 
 # time reference for CTM datafields
 CTM_TIME_UNIT_STR = 'hours since 1985-01-01 00:00:00'
@@ -49,3 +51,16 @@ def time2tau(time, reference=CTM_TIME_REF_DT):
     (default: 01.01.1985 00:00).
     """
     return (time - reference).total_seconds() / 3600.0
+
+
+def strp_relativedelta(delta_t):
+    """
+    Parse `delta_t` (string) given the format 'YYYY-MM-DD hh:mm:ss'
+    and returns a :class:`dateutil.relativedelta` object.
+
+    """
+    d, t = delta_t.split(' ')
+    keys = 'years', 'months', 'days', 'hours', 'minutes', 'seconds'
+    vals = [int(i) for i in d.split('-')] +  [int(i) for i in t.split(':')]
+
+    return relativedelta(**dict(zip(keys, vals)))

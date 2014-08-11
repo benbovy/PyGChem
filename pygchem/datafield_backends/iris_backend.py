@@ -261,6 +261,10 @@ def fix_bpch2coards(cube, field, filename):
     iris.std_names.STD_NAMES[cube.var_name] = {'canonical_units': cube.units}
     cube.standard_name = cube.var_name
 
+    # attributes
+    # TODO: don't remove all attributes
+    cube.attributes.clear()
+
     # longitude coordinate (non strictly monotonic) degrees -> degrees_east
     try:
         lon = cube.coord('longitude')

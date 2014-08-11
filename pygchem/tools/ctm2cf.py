@@ -43,6 +43,7 @@ UNITS_MAP_CTM2CF = (
     ('unitles', '1'),       # typo found in tracerinfo or diaginfo
     ('v/v', '1'),
     ('level', '1'),         # allowed in CF1.6 but not compatible with udunits2
+    ('Eta', '1'),
     ('Fraction', '1'),
     ('fraction', '1'),
     ('ratio', '1'),

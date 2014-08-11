@@ -25,9 +25,8 @@ class FortranFile(file):
 
     Parameters
     ----------
-    filename : string or `file` instance
-        filename or opened file (the read/write pointer will be reset to the
-        beginning of the file.
+    filename : string
+        filename
     mode : {'rb', 'wb'}
         mode of the file: 'rb' (reading binary, default) or 'wb'
         (writing binary).
@@ -54,10 +53,7 @@ class FortranFile(file):
 
     def __init__(self, filename, mode='rb', endian='>'):
         self.endian = endian
-        if not isinstance(filename, file):
-            file.__init__(self, filename, mode)
-        else:
-            self.seek(0) 
+        super(FortranFile, self).__init__(filename, mode)
 
     def _fix(self, fmt='i'):
         """

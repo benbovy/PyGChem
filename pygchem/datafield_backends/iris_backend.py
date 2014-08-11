@@ -16,16 +16,18 @@ Also adds support for BPCH format to Iris.
 from __future__ import absolute_import
 
 import glob
+import collections
 from types import StringTypes
 
 import numpy as np
 import iris
+import iris.cube
 import iris.unit
 import iris.coords
 import iris.fileformats
 import iris.io.format_picker as fp
 
-from pygchem import grid
+from pygchem import grid, diagnostics
 from pygchem.utils import uff
 from pygchem.io import bpch
 from pygchem.tools import irisutil
@@ -115,11 +117,14 @@ class LeadingLineUff(fp.FileElement):
     """
     def __init__(self, endian):
         self._endian = endian
-        super(LeadingLineUff, self).__init__(requires_fh=False)
+        super(LeadingLineUff, self).__init__(requires_fh=True)
 
     def get_element(self, basename, file_handle):
-        with uff.FortranFile(basename, endian=self._endian) as uffile:
-            leading_line = uffile.readline()
+        with uff.FortranFile(file_handle.name, endian=self._endian) as uffile:
+            try:
+                leading_line = uffile.readline()
+            except IOError:
+                leading_line = ''
         return leading_line
 
 
@@ -144,9 +149,37 @@ iris.fileformats.FORMAT_AGENT.add_spec(bpch_spec_le)
 
 # TODO: write a bpch Saver class (not a priority)
 
+
 # -----------------------------------------------------------------------------
-# Wrappers for Iris's load and save functions
+# Wrappers for Iris's main classes and load / save functions
 #------------------------------------------------------------------------------
+
+class CTMField(iris.cube.Cube):
+    """
+    in development.
+
+    """
+
+    @property
+    def diagnostic(self):
+        """
+        A :class:`pygchem.diagnostics.CTMDiagnostic` object containing
+        the CTM diagnostic metadata.
+        """
+        return self._diagnostic
+
+    @diagnostic.setter
+    def diagnostic(self, d):
+        if not isinstance(d, diagnostics.CTMDiagnostic) and d is not None:
+            if not isinstance(d, collections.Mapping):
+                raise ValueError(
+                    "expected a 'pygchem.diagnostics.CTMDiagnostic' object"
+                    "or mappable, found '{cn}'".format(cn=d.__class__.__name__)
+                )
+            d = diagnostics.CTMDiagnostic(**d)
+        self._diagnostic = d
+
+
 
 load = iris.load
 load_cube = iris.load_cube

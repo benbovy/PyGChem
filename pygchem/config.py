@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 
-# module config
 # parts of pygchem (Python interface for GEOS-Chem Chemistry Transport Model)
 #
-# Copyright (C) 2012/2013 Benoit Bovy.
+# Copyright (C) 2012-2014 Benoit Bovy.
 # see license.txt for more details
 # 
 #
-# Last modification: 04/2013
 
 """
-Package configuration. "Global constants" are defined here.
+PyGChem configuration.
 
 """
 
 import inspect
 import os
 
+
+# TODO: config system similar to the one implemented in IPython
+# (lower case, comments, generate / read config files...)
 
 # Paths
 _this_file = inspect.getframeinfo(inspect.currentframe()).filename

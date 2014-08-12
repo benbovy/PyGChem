@@ -28,3 +28,5 @@ import sys
 if sys.version_info[:2] < (2, 6):
     raise ImportError("Python version 2.6 or later is required for PyGChem"
                       " (%d.%d detected)." % sys.version_info[:2])
+
+# TODO: set a logger (logging module) to handle messages while using pygchem

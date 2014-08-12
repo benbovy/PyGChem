@@ -405,10 +405,13 @@ class Record(object):
 
     def __init__(self, *args):
         # convert type if needed
-        for k, t, v in zip(self.__slots__, self._types, args):
+        for k, p, t, v in zip(self.__slots__, self._properties,
+                              self._types, args):
             if t is not None:
                 v = t(v)
-            setattr(self, k, v)
+                setattr(self, k, v)
+            else:
+                setattr(self, p, v)
 
     def keys(self):
         for k in self._properties:

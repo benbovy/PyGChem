@@ -351,9 +351,12 @@ class CTMField(iris.cube.Cube):
         self._diagnostic = d
 
 
+Constraint = iris.Constraint
+AttributeConstraint = iris.AttributeConstraint
+
 load = iris.load
-load_cube = iris.load_cube
-load_cubes = iris.load_cubes
+load_field = iris.load_cube
+load_fields = iris.load_cubes
 load_raw = iris.load_raw
 
 save = iris.save
@@ -366,6 +369,3 @@ save = iris.save
 #     that link the cube to Diagnostic object and other metadata
 #     (e.g. 'loaded_from_file', 'save_to_file'), and all functions / methods
 #     returning new cube / cubelist overridden to return the subclass
-
-# TODO: emission module, emission fields, scale factor and mask subclasses
-#   - rather than cube with extra attributes.

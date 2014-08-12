@@ -104,7 +104,7 @@ class RecordList(UserList):
         return self._selection_ref
 
     def _get_ref_classes_names(self):
-        return "or ".join(c.__name__ for c in self.ref_classes)
+        return " or ".join(c.__name__ for c in self.ref_classes)
 
     def _create_selection(self, sel_objects):
         cls = self.__class__

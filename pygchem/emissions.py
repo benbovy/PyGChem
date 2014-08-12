@@ -14,6 +14,7 @@ Interface to the Harvard-NASA Emissions Component (HEMCO).
 import os
 
 from pygchem import config
+from pygchem import datafields
 from pygchem.utils.data_structures import record_cls, RecordList
 from pygchem.utils import exceptions
 
@@ -40,7 +41,8 @@ _base_properties = (
      "Used to get the time slices of interest from the data "
      "(see :func:`pygchem.tools.timeutil.strp_timeslicer`)"),
     ('datafield', None, None, False,
-     "The datafield object")
+     "The data field (:class:`pygchem.datafields.CTMField`) object, "
+     "or None if no data field has been loaded/assigned")
 )
 
 _base_required = [p[0] for p in _base_properties if p[0] != 'datafield']
@@ -142,6 +144,79 @@ EmissionExt.base_emission_fields = property(
     ),
     doc=EmissionBase.scale_factors.__doc__
 )
+
+
+#-----------------------------------------------------------------------------
+# Data field related functions
+#-----------------------------------------------------------------------------
+
+def load_emission_data(emission_fields, return_data=False):
+    """
+    Load the data field(s) corresponding to one or more given emission
+    fields (base emission, scale factors and/or masks).
+
+    Parameters
+    ----------
+    emission_fields : (sequence of) emission field object(s)
+        load data fields for these emission fields (:class:`EmissionBase`,
+        :class:`EmissionScale` or :class:`EmissionMask` objects).
+    return_data : bool
+        if True, it will return the loaded data fields, in addition to
+        assign it to the corresponding emission fields (:prop:`datafield`).
+
+    Notes
+    -----
+    The metadata and emission fields (:prop:`var_name` and :prop:`filename`)
+    is used to load the data fields.
+
+    """
+    if isinstance(emission_fields, (EmissionBase, EmissionScale, EmissionMask)):
+        emission_fields = [emission_fields]
+    data_fields = []
+
+    # TODO: load data fields at once for emission fields with the same filename
+    for efield in emission_fields:
+        constraint = datafields.Constraint(
+            cube_func=lambda cube: efield.var_name == efield.var_name
+        )
+        dfield = datafields.load(efield.filename, constraint)
+        efield.datafield = dfield
+        data_fields.append(dfield)
+
+    if return_data:
+        return data_fields
+
+
+def save_emission_data(emission_fields):
+    """
+    Save the data field(s) of to one or more given emission fields
+    to their assigned file.
+
+    Not yet implemented.
+
+    """
+    raise exceptions.NotYetImplementedError()
+
+
+def gen_time_slices(emission_field):
+    """
+    Generate the data field time slices of interest for an emission field.
+
+    Parameters
+    ----------
+    emission_field : emission field object
+        :class:`EmissionBase`, :class:`EmissionScale` or :class:`EmissionMask`
+        objects. :prop:`timeslicer` is used to generate the time slices.
+
+    Returns
+    -------
+    generator
+        sub-data field time slices.
+
+    Not yet implemented.
+
+    """
+    raise exceptions.NotYetImplementedError()
 
 
 #-----------------------------------------------------------------------------

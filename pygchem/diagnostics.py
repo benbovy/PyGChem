@@ -78,9 +78,9 @@ class CTMDiagnosticInfo(object):
     def __init__(self, diaginfo_file='', tracerinfo_file=''):
 
         self.categories = RecordList([], key_attr='name',
-                                     ref_class=CTMCategory)
+                                     ref_classes=CTMCategory)
         self.diagnostics = RecordList([], key_attr='number',
-                                      ref_class=CTMDiagnostic)
+                                      ref_classes=CTMDiagnostic)
 
         if diaginfo_file is not None:
             if not diaginfo_file:

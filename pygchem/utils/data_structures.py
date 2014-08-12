@@ -13,6 +13,7 @@ Custom, generic data structures.
 
 import sys
 import os
+import collections
 from textwrap import dedent
 from keyword import iskeyword
 from collections import OrderedDict
@@ -27,29 +28,31 @@ from pygchem.utils import exceptions
 
 class RecordList(UserList):
     """
-    A list of objects of one (record-type) class with basic database-like
-    lookup capabilities.
+    A list of objects of one or more (record-type) classes
+    with basic database-like lookup capabilities.
 
     Parameters
     ----------
     items : iterable
         Objects (records) to append to the list. All items in the iterable must
-        be instances of a same class.
+        be objects of any class specified in `ref_classes`.
     key_attr : string
         Name of the class attribute that will be used to define a key for each
         item in the list (if None, auto incremented integers will be used).
     triggers_add : (callable or None, callable or None)
         Functions called before / after an item is added to the list.
-        Each function must accepts one argument that must be any
-        object of class `ref_class`.
+        Each function must accepts one argument that must be an
+        object of any class defined in `ref_classes`.
     triggers_del : (callable or None, callable or None)
         Functions called before / after an item is removed from the list.
     read_only : bool
         If True, the list is read-only and will behave like an immutable
         sequence.
-    ref_class : class or None
-        Specify explicitly the class of items in the list
-        (if None, the class will be determined from the first item in `items`).
+    ref_classes : class or list of classes or None
+        Specify explicitly the class(es) of items in the list.
+        If None, the class will be determined from the first item in `items`.
+        All provided classes must at least define an attribute according to the
+        given `key_attr` argument.
 
     Notes
     -----
@@ -59,12 +62,16 @@ class RecordList(UserList):
 
     def __init__(self, items, key_attr=None,
                  triggers_add=(None, None), triggers_del=(None, None),
-                 read_only=False, ref_class=None):
+                 read_only=False, ref_classes=None):
 
         super(RecordList, self).__init__([])
 
         self.key_attr = key_attr
-        self.ref_class = ref_class
+        if ref_classes is None:
+            ref_classes = tuple()
+        elif not isinstance(ref_classes, collections.Iterable):
+            ref_classes = (ref_classes,)
+        self.ref_classes = tuple(ref_classes)
         self._selection_ref = None
 
         dummy_trigger = lambda item: True
@@ -96,6 +103,9 @@ class RecordList(UserList):
         """
         return self._selection_ref
 
+    def _get_ref_classes_names(self):
+        return "or ".join(c.__name__ for c in self.ref_classes)
+
     def _create_selection(self, sel_objects):
         cls = self.__class__
         selection = cls(sel_objects, key_attr=self.key_attr)
@@ -122,21 +132,21 @@ class RecordList(UserList):
                                                .format(self.__class__.__name__))
 
     def _check_before_add(self, item):
-        if self.ref_class is None:
-            self.ref_class = item.__class__
+        if not len(self.ref_classes):
+            self.ref_classes = (item.__class__,)
 
         self._check_read_only()
-        if not isinstance(item, self.ref_class):
+        if not isinstance(item, self.ref_classes):
             raise ValueError(
                 "cannot add a '{0}' item in a list of '{1}' items"
-                .format(type(item).__name__, self.ref_class.__name__)
+                .format(type(item).__name__, self._get_ref_classes_names())
             )
 
         item_key = getattr(item, self.key_attr)
         if item_key in self.keys:
             raise ValueError(
                 "a '{0}' item with key '{0}' is already in the list"
-                .format(self.ref_class.__name__, item_key)
+                .format(self._get_ref_classes_names(), item_key)
             )
 
     def selection_replace(self, new_item):
@@ -205,7 +215,7 @@ class RecordList(UserList):
         ----------
         *args
             Any key value(s), or any callable(s) that accepts any object of
-            `ref_class` as argument and that returns True or False.
+            `ref_classes` as argument and that returns True or False.
         **kwargs
             Used to define simple conditions, i.e., the value of the
             attribute specified by the keyword equals the given value.
@@ -379,7 +389,7 @@ class RecordList(UserList):
 
     def __str__(self):
         return "List of {0} {1}{2}:\n{3}" \
-            .format(len(self), self.ref_class.__name__,
+            .format(len(self), self._get_ref_classes_names(),
                     ' (selection)' if self._selection_ref is not None else '',
                     '\n'.join(str(obj) for obj in self.data))
 

@@ -15,6 +15,7 @@ import os
 
 from pygchem import config
 from pygchem import datafields
+from pygchem.io.hemco import read_hemco
 from pygchem.utils.data_structures import record_cls, RecordList
 from pygchem.utils import exceptions
 
@@ -29,9 +30,9 @@ DEFAULT_HEMCO_SETTINGS_PATH = os.path.join(config.PACKAGE_DATA_PATH,
 _base_properties = (
     ('name', str, None, False,
      "Descriptive field name"),
-    ('filename', str, None, False,
+    ('filename', None, None, False,
      "(netCDF) file name where the variable is stored"),
-    ('var_name', str, None, False,
+    ('var_name', None, None, False,
      "Name of the variable in the file"),
     ('ndim', int, None, False,
      "Number of dimensions of in the data"),
@@ -84,6 +85,7 @@ EmissionScale = record_cls(
 EmissionMask = record_cls(
     "EmssionMask",
     "Emssion mask (data and) metadata",
+    _base_properties +
     (('operator', str, '*', True,
       "Mathematical operator (should not be other than multiply '*')"),
      ('mask_window', None, None, False,
@@ -108,6 +110,9 @@ EmissionExt = record_cls(
       "True if the extension is enabled"),
      ('base_emission_fields', None, (), False,
       "Base emission fields (e.g., :class:`EmissionBase` objects) "
+      "used by the extension"),
+     ('extension_data', None, (), False,
+      "Other data fields (e.g., :class:`EmissionBase` objects) "
       "used by the extension"),
      ('species', None, None, False,
       "Chemical species handled by the extension"),
@@ -140,6 +145,15 @@ EmissionExt.base_emission_fields = property(
     lambda self: self._base_emission_fields,
     lambda self, value: setattr(
         self, '_base_emission_fields',
+        RecordList(value, ref_classes=EmissionBase, key_attr='name'),
+    ),
+    doc=EmissionBase.scale_factors.__doc__
+)
+
+EmissionExt.extension_data = property(
+    lambda self: self._extension_data,
+    lambda self, value: setattr(
+        self, '_extension_data',
         RecordList(value, ref_classes=EmissionBase, key_attr='name'),
     ),
     doc=EmissionBase.scale_factors.__doc__
@@ -238,7 +252,8 @@ class Emissions(object):
 
     """
     def __init__(self, extensions=(), description=''):
-        self._extensions = RecordList(extensions, ref_classes=EmissionExt)
+        self._extensions = RecordList(extensions, ref_classes=EmissionExt,
+                                      key_attr='name')
         self.description = str(description)
         self.name = str(self.description)
 
@@ -378,9 +393,48 @@ class Emissions(object):
         A :class:`Emissions` object.
 
         """
-        #cls = read_config_file(filename)
-        #return cls
-        pass
+        (settings, base_emission_fields, scale_factors, masks,
+         extensions, extension_data) = read_hemco(filename)
+
+        # add Core extension if needed
+        if not any([ext['eid'] == 0 for ext in extensions]):
+            extensions.append({'eid': 0, 'name': 'Core', 'enabled': True})
+
+        emission_scales = [EmissionScale(**sf) for sf in scale_factors]
+        emission_masks = [EmissionMask(**m) for m in masks]
+
+        bef_eid_map = []
+        for bef in base_emission_fields:
+            bef_eid_map.append(bef.pop('eid'))
+            fids = bef.pop('fids')
+            bef['scale_factors'] = [sf for sf in emission_scales
+                                    if sf.fid in fids]
+            bef['scale_factors'] += [m for m in emission_masks if m.fid in fids]
+        emission_bases = [EmissionBase(**bef) for bef in base_emission_fields]
+
+        ed_eid_map = []
+        for ed in extension_data:
+            ed_eid_map.append(ed.pop('eid'))
+            fids = ed.pop('fids')
+            ed['scale_factors'] = [sf for sf in emission_scales
+                                   if sf.fid in fids]
+            ed['scale_factors'] += [m for m in emission_masks if m.fid in fids]
+        emission_extdata = [EmissionBase(**ed) for ed in extension_data]
+
+        for ext in extensions:
+            ext['base_emission_fields'] = [
+                bef for idx, bef in enumerate(emission_bases)
+                if bef_eid_map[idx] == ext['eid']
+            ]
+            ext['extension_data'] = [
+                ed for idx, ed in enumerate(emission_extdata)
+                if ed_eid_map[idx] == ext['eid']
+            ]
+        emission_extensions = [EmissionExt(**ext) for ext in extensions]
+
+        return cls(extensions=emission_extensions,
+                   description="setup imported from file '{0}'"
+                               .format(filename))
 
     @classmethod
     def load_default(cls, settings):
@@ -432,5 +486,5 @@ class Emissions(object):
         return repr(self)
 
 
-load_emissions = Emissions.load
-load_emissions_default = Emissions.load_default
+load_setup = Emissions.load
+load_default_setup = Emissions.load_default

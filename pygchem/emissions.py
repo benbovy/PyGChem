@@ -237,7 +237,7 @@ def gen_time_slices(emission_field):
 # Main emission class (+ functions)
 #-----------------------------------------------------------------------------
 
-class Emissions(object):
+class EmissionSetup(object):
     """
     Settings for the Harvard-NASA Emissions Component (HEMCO).
 
@@ -390,7 +390,7 @@ class Emissions(object):
 
         Returns
         -------
-        A :class:`Emissions` object.
+        A :class:`EmissionSetup` object.
 
         """
         (settings, base_emission_fields, scale_factors, masks,
@@ -449,7 +449,7 @@ class Emissions(object):
 
         Returns
         -------
-        A :class:`Emissions` object.
+        A :class:`EmissionSetup` object.
 
         """
         settings_file = os.path.join(DEFAULT_HEMCO_SETTINGS_PATH, settings)
@@ -486,5 +486,5 @@ class Emissions(object):
         return repr(self)
 
 
-load_setup = Emissions.load
-load_default_setup = Emissions.load_default
+load_setup = EmissionSetup.load
+load_default_setup = EmissionSetup.load_default

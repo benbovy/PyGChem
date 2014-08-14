@@ -16,7 +16,7 @@ import importlib
 
 DEFAULT_BACKEND = 'iris'   # TODO: move this in the config module
 
-_dbackend = importlib.import_module("pygchem.datafield_backends.{0}"
+_dbackend = importlib.import_module("pygchem.datafield_backends.{0}_backend"
                                     .format(DEFAULT_BACKEND))
 
 CTMField = _dbackend.CTMField

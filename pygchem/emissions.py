@@ -284,7 +284,8 @@ class EmissionSetup(object):
         bef = []
         for ext in self.extensions:
             bef.extend(ext.base_emission_fields)
-        return RecordList(set(bef), ref_classes=EmissionBase, read_only=True)
+        return RecordList(set(bef), ref_classes=EmissionBase, read_only=True,
+                          key_attr='name')
 
     @property
     def scale_factors(self):
@@ -302,7 +303,7 @@ class EmissionSetup(object):
         for bef in self.base_emission_fields:
             sf.extend(bef.scale_factors)
         return RecordList(set(sf), ref_classes=[EmissionScale, EmissionMask],
-                          read_only=True)
+                          read_only=True, key_attr='name')
 
     def get_fids(self):
         """

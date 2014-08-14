@@ -388,12 +388,14 @@ class RecordList(UserList):
         raise exceptions.NotPermittedError('duplicating items is not allowed')
 
     def __str__(self):
+        # TODO: only show the keys?
         return "List of {0} {1}{2}:\n{3}" \
             .format(len(self), self._get_ref_classes_names(),
                     ' (selection)' if self._selection_ref is not None else '',
                     '\n'.join(str(obj) for obj in self.data))
 
     def __repr__(self):
+        # TODO: only show the keys?
         return "<{0}{1}: {2}>"\
             .format(self.__class__.__name__,
                     ' (selection)' if self._selection_ref is not None else '',

@@ -193,7 +193,10 @@ def load_emission_data(emission_fields, return_data=False):
         constraint = datafields.Constraint(
             cube_func=lambda cube: efield.var_name == efield.var_name
         )
-        dfield = datafields.load(efield.filename, constraint)
+        if efield.filename is not None:
+            dfield = datafields.load(efield.filename, constraint)
+        else:
+            dfield = None
         efield.datafield = dfield
         data_fields.append(dfield)
 
@@ -278,13 +281,11 @@ class EmissionSetup(object):
         -------
         A read-only list (:class:`pygchem.utils.data_structures.RecordList`)
         of all base emission fields attached to the emission setup.
-        If a field is attached to several extensions, it appears only once
-        in the list.
         """
         bef = []
         for ext in self.extensions:
             bef.extend(ext.base_emission_fields)
-        return RecordList(set(bef), ref_classes=EmissionBase, read_only=True,
+        return RecordList(bef, ref_classes=EmissionBase, read_only=True,
                           key_attr='name')
 
     @property
@@ -302,6 +303,8 @@ class EmissionSetup(object):
         sf = []
         for bef in self.base_emission_fields:
             sf.extend(bef.scale_factors)
+        # TODO: using 'set' doesn't preserve order, confusion with RecordList
+        # (order should matter)
         return RecordList(set(sf), ref_classes=[EmissionScale, EmissionMask],
                           read_only=True, key_attr='name')
 

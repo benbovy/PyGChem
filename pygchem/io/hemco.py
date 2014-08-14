@@ -232,8 +232,8 @@ def _parse_section_lines(lines, section, filename,
         try:
             try_parse(line_number, line, fields_spec, fields_sep)
         except IOError:
-            # allow to handle alternative specifications and separator(s)
-            # (needed for extension settings)
+            # try the alternative field specifications and separator(s) (if
+            # provided) before raise the error (needed for extension settings)
             if alt_fields_sep is not None and alt_fields_spec is not None:
                 try_parse(line_number, line, alt_fields_spec, alt_fields_sep)
 

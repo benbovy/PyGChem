@@ -1,0 +1,777 @@
+### HEMCO INPUT FILE ###
+#
+# ==================================================================================================
+# This file contains source file information of all emission fields used by HEMCO. 
+# Base emissions, scale factors and masks are listed in three separate sections. HEMCO settings and 
+# extensions are defined/activated at the end of the input file.
+#
+# Required for all fields: 
+# - Name: Descriptive field name.
+# - sourceFile: (netCDF) file name (incl. full path)
+# - sourceVar: file variable of interest
+# - sourceTime: time stamp of interest. Format is YYYY/MM/DD/HH. Ranges are allowed for temporally 
+#               changing data, e.g. 1990-2005/1/1/0 or 2002/1-12/1/0, in which case the time slices 
+#               closest to the simulation date is read and used (data will be updated automatically). 
+#               Use wildcard character (*) to read all time slices at once, e.g. 1990/1/1/*. This is 
+#               only recommended for quickly varying data, e.g. hourly data.
+# - srcDim: dimension of data: xy or xyz. This is mainly for compatibility with ESMF.
+# - srcUnit: unit of data. This is mainly for compatibility with ESMF.
+#
+# Additional fields required for base emissions:
+# - ExtNr: Extension number. Must match the extension number set in the extensions toggle section. 
+#          Use 0 for data to be used by HEMCO core.
+# - Species: Model name of emitted species. Emissions will only be calculated if Species matches one 
+#            of the model species names defined during initialization of HEMCO.
+# - ScalIDs: Scale factor IDs to be applied to the base field. Must match one of the ScalID entries 
+#            given in the scale factor/mask section. Separate multiple scale factors by forwardslash 
+#            (/). Use dash (-) if none.
+# - Cat: Emission category. Fields of the same category will be assembled based upon hierarchies. 
+# - Hier: Emission hierarchy. Higher hierarchy emissions will overwrite lower hierarchy emissions 
+#         (if same category).
+#
+# Additional fields required for scale factors:
+# - ScalID: Scale factor ID. To identify scale factor IDs assigend to base emissions
+# - Oper: Mathematical operator.
+#         1: Multiply, i.e. E = B * S.
+#         2: Square, i.e. E = B * S^2.
+#         -1: Divide, i.e. E = B * (1/S). Zeros will be ignored.
+#         3: Mirror, i.e. E = B * (1-S). Only applies to mask fields.
+# - Scalar: Instead of using gridded scale data from a (netCDF) file, a scalar value can be defined. 
+#           This value will be uniformly applied to each grid box (e.g. to divide lumped VOC 
+#           emissions into individual species). Leave all file information blank (-) if scalar value 
+#           shall be used. Scalars can be uniform in time (one entry), hourly scale factors (24 
+#           entries, separated by forward slash: 12am, 1am, ... 11pm), day-of-week factor (7 entries: 
+#           Sun, Mon, ... Sat), or monthly scale factors (12 entries: Jan, ... Dec).
+#
+# Additional fields required for masks:
+# - Lon1/Lat1/Lon2/Lat2: Mask window. Give the approximate window of the mask field. Only used to 
+#                        determine whether or not a field is important for a given CPU. Lon1/Lat1 
+#                        denote the lower left corner, Lon2/Lat2 is the upper right corner.
+#
+# Settings:
+# - Verbose: Set to true to run HEMCO in verbose mode.
+#
+# Extensions switches:
+# This section steers which extensions shall be used and what files are associated with them.
+# - ExtName: extension name
+# - on/off: Set to on to activate extension
+# - ExtNr: Extensions number. To use data defined in the base emissions section with a particular 
+#          extension, the ExtNr's must match. ExtNr 0 is reserved for HEMCO core!
+# ==================================================================================================
+
+####################################################################################
+BEGIN SECTION SETTINGS
+####################################################################################
+#
+Logfile: HEMCO.log
+Wildcard: *
+Separator: /
+Only unitless scale factors: false
+Verbose: false 
+Show warnings: true
+#
+END SECTION SETTINGS 
+
+####################################################################################
+BEGIN SECTION BASE EMISSIONS 
+####################################################################################
+
+# ExtNr	Name sourceFile	sourceVar sourceTime SrcDim SrcUnit Species ScalIDs Cat Hier
+
+# --- MACCity ---
+#0 MACCITY_NO /home/ckeller/data/emis/MACCITY/nc/MACCity_anthro_NOx_2000-2010_16080.nc MACCity 2000/1/1/0 xy kg/m2/s NO - 1 10000  
+#0 MACCITY_CO /home/ckeller/data/emis/MACCITY/nc/MACCity_anthro_CO_2000-2010_16080.nc  MACCity 2000/1/1/0 xy kg/m2/s CO - 1 1  
+
+# --- GEIA ---
+#0 GEIA_NO   /home/ckeller/data/emis/GEIA/nc/GEIA_NOSO4.fullyear.geos.4x5.nc NO   1985/1-12/1/0 xy  kg/m2/s NO   1/2/25/20    1 1 
+#0 GEIA_CO   /home/ckeller/data/emis/GEIA/nc/GEIA_FOSSIL.geos.1x1.nc         CO   1985/1/1/0    xy  kg/m2/s CO   6/7/26/21/52 1 1 
+0 GEIA_ALK4 /home/ckeller/data/emis/GEIA/nc/GEIA_FOSSIL.geos.1x1.nc         ALK4 1985/1/1/0    xy  kg/m2/s ALK4 6/7/26/22    1 1 
+0 GEIA_ACET /home/ckeller/data/emis/GEIA/nc/GEIA_FOSSIL.geos.1x1.nc         ACET 1985/1/1/0    xy  kg/m2/s ACET 6/7/26/55    1 1
+0 GEIA_PRPE /home/ckeller/data/emis/GEIA/nc/GEIA_FOSSIL.geos.1x1.nc         PRPE 1985/1/1/0    xy  kg/m2/s PRPE 6/7/26/22    1 1
+0 GEIA_MEK  /home/ckeller/data/emis/GEIA/nc/GEIA_FOSSIL.geos.1x1.nc         MEK  1985/1/1/0    xy  kg/m2/s MEK  6/7/26       1 1
+#0 GEIA_C2H6 /home/ckeller/data/emis/GEIA/nc/GEIA_FOSSIL.geos.1x1.nc         C2H6 1985/1/1/0    xy  kg/m2/s C2H6 26           1 1
+#0 GEIA_C3H8 /home/ckeller/data/emis/GEIA/nc/GEIA_FOSSIL.geos.1x1.nc         C3H8 1985/1/1/0    xy  kg/m2/s C3H8 6/7/26/22    1 1
+
+# GEIA NH3 emissions: anthropogenic, biofuel and natural sources
+0 GEIA_NH3_ANTH /home/ckeller/data/emis/NH3/nc/NH3_geos.2x25.nc NH3_ANTH 1990/1-12/1/0 xy  kg/m2/s NH3 - 1 1 
+0 GEIA_NH3_BIOF /home/ckeller/data/emis/NH3/nc/NH3_geos.2x25.nc NH3_BIOF 1990/1-12/1/0 xy  kg/m2/s NH3 - 1 1
+0 GEIA_NH3_NATU /home/ckeller/data/emis/NH3/nc/NH3_geos.2x25.nc NH3_NATU 1990/1-12/1/0 xy  kg/m2/s NH3 - 1 1
+
+# --- EDGAR ---
+0 EDGAR_NO__F1  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.f1000  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+0 EDGAR_NO__F2  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.f2000  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+0 EDGAR_NO__F3  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.f3000  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+0 EDGAR_NO__F4  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.f4000  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+0 EDGAR_NO__F51  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.f5100  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+0 EDGAR_NO__F54  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.f5400  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+#NO.f5700 does not seem to be used in orig. code...
+#0 EDGAR_NO__F57  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.f5700  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+0 EDGAR_NO__F8  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.f8000  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+0 EDGAR_NO__I1  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.i1000  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+0 EDGAR_NO__I3  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.i3000  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+0 EDGAR_NO__I4  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.i4000  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+0 EDGAR_NO__I5  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.i5000  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+0 EDGAR_NO__W4  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  NO.w4000  2000/1/1/0 xy kg/m2/s NO  1/25/30 1 2 
+0 EDGAR_CO__F1  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  CO.f1000  2000/1/1/0 xy kg/m2/s CO  6/26/52 1 2 
+0 EDGAR_CO__F2  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  CO.f2000  2000/1/1/0 xy kg/m2/s CO  6/26/52 1 2 
+0 EDGAR_CO__F3  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  CO.f3000  2000/1/1/0 xy kg/m2/s CO  6/26/52 1 2 
+0 EDGAR_CO__F4  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  CO.f4000  2000/1/1/0 xy kg/m2/s CO  6/26/52 1 2 
+0 EDGAR_CO__F51  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  CO.f5100  2000/1/1/0 xy kg/m2/s CO  6/26/52 1 2 
+0 EDGAR_CO__F54  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  CO.f5400  2000/1/1/0 xy kg/m2/s CO  6/26/52 1 2 
+0 EDGAR_CO__F57  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  CO.f5700  2000/1/1/0 xy kg/m2/s CO  6/26/52 1 2 
+0 EDGAR_CO__F8  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  CO.f8000  2000/1/1/0 xy kg/m2/s CO  6/26/52 1 2 
+0 EDGAR_CO__I1  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  CO.i1000  2000/1/1/0 xy kg/m2/s CO  6/26/52 1 2 
+0 EDGAR_CO__I2  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  CO.i2000  2000/1/1/0 xy kg/m2/s CO  6/26/52 1 2 
+0 EDGAR_CO__I5  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  CO.i5000  2000/1/1/0 xy kg/m2/s CO  6/26/52 1 2 
+0 EDGAR_CO__W4  /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc  CO.w4095  2000/1/1/0 xy kg/m2/s CO  6/26/52 1 2 
+0 EDGAR_SO2__F1 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.f1000 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__F2 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.f2000 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__F3 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.f3000 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__F4 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.f4000 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__F51 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.f5100 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__F54 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.f5400 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__F57 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.f5700 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__F8 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.f8000 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__I1 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.i1000 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__I2 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.i2000 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__I3 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.i3000 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__I4 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.i4000 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__I5 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.i5000 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+0 EDGAR_SO2__W4 /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc SO2.w4000 2000/1/1/0 xy kg/m2/s SO2 11/31   1 2 
+
+# --- BIOFUEL EMISSIONS (Yevich and Logan, 2003) ---
+# ==> Note that this inventory does not contain emissions over the US!!
+#     Add to EDGAR emissions, i.e assign same category and hierarchy as EDGAR!
+#     Don't read VOCs that are included in RETRO!!
+0 BIOFUEL_NO   /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc NO   1985/1/1/0 xy kg/m2/s NO    - 1 2 
+0 BIOFUEL_CO   /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc CO   1985/1/1/0 xy kg/m2/s CO   53 1 2 
+0 BIOFUEL_SO2  /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc SO2  1985/1/1/0 xy kg/m2/s SO2   - 1 2 
+0 BIOFUEL_GLYX /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc GLYX 1985/1/1/0 xy kg/m2/s GLYX  - 1 2 
+0 BIOFUEL_MGLY /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc MGLY 1985/1/1/0 xy kg/m2/s MGLY  - 1 2 
+0 BIOFUEL_GLYC /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc GLYC 1985/1/1/0 xy kg/m2/s GLYC  - 1 2 
+0 BIOFUEL_HAC  /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc HAC  1985/1/1/0 xy kg/m2/s HAC   - 1 2 
+#0 BIOFUEL_BENZ /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc BENZ 1985/1/1/0 xy kg/m2/s BENZ  - 1 2 
+#0 BIOFUEL_TOLU /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc TOLU 1985/1/1/0 xy kg/m2/s TOLU  - 1 2 
+#0 BIOFUEL_XYLE /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc XYLE 1985/1/1/0 xy kg/m2/s XYLE  - 1 2 
+#0 BIOFUEL_C2H4 /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc C2H4 1985/1/1/0 xy kg/m2/s C2H4  - 1 2 
+#0 BIOFUEL_C2H2 /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc C2H2 1985/1/1/0 xy kg/m2/s C2H2  - 1 2 
+#0 BIOFUEL_ALK4 /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc ALK4 1985/1/1/0 xy kg/m2/s ALK4 -  1 2 
+#0 BIOFUEL_ACET /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc ACET 1985/1/1/0 xy kg/m2/s ACET -  1 2 
+#0 BIOFUEL_MEK  /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc MEK  1985/1/1/0 xy kg/m2/s MEK  -  1 2 
+#0 BIOFUEL_ALD2 /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc ALD2 1985/1/1/0 xy kg/m2/s ALD2 -  1 2 
+#0 BIOFUEL_PRPE /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc PRPE 1985/1/1/0 xy kg/m2/s PRPE -  1 2 
+#0 BIOFUEL_C3H8 /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc C3H8 1985/1/1/0 xy kg/m2/s C3H8 -  1 2 
+#0 BIOFUEL_CH2O /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc CH2O 1985/1/1/0 xy kg/m2/s CH2O -  1 2 
+#0 BIOFUEL_C2H6 /home/ckeller/data/emis/BIOFUEL/nc/biofuel.geos.1x1.nc C2H6 1985/1/1/0 xy kg/m2/s C2H6 -  1 2 
+
+# --- RETRO ---
+0 RETRO_ALK4 /home/ckeller/data/emis/RETRO/nc/orig_kgC/butanes_kgC.nc  emission_flux 2000/1-12/1/0 xy kg/m2/s ALK4 26    1 3  
+0 RETRO_ALK4 /home/ckeller/data/emis/RETRO/nc/orig_kgC/pentanes_kgC.nc emission_flux 2000/1-12/1/0 xy kg/m2/s ALK4 26    1 3  
+0 RETRO_ALK4 /home/ckeller/data/emis/RETRO/nc/orig_kgC/hexanes_kgC.nc  emission_flux 2000/1-12/1/0 xy kg/m2/s ALK4 26    1 3 
+0 RETRO_ACET /home/ckeller/data/emis/RETRO/nc/orig_kgC/ketones_kgC.nc  emission_flux 2000/1-12/1/0 xy kg/m2/s ACET 26/51 1 3 
+0 RETRO_MEK  /home/ckeller/data/emis/RETRO/nc/orig_kgC/ketones_kgC.nc  emission_flux 2000/1-12/1/0 xy kg/m2/s MEK  26/50 1 3 
+0 RETRO_ALD2 /home/ckeller/data/emis/RETRO/nc/orig_kgC/alkanals_kgC.nc emission_flux 2000/1-12/1/0 xy kg/m2/s ALD2 26    1 3 
+0 RETRO_PRPE /home/ckeller/data/emis/RETRO/nc/orig_kgC/propene_kgC.nc  emission_flux 2000/1-12/1/0 xy kg/m2/s PRPE 26    1 3 
+0 RETRO_C3H8 /home/ckeller/data/emis/RETRO/nc/orig_kgC/propane_kgC.nc  emission_flux 2000/1-12/1/0 xy kg/m2/s C3H8 26    1 3 
+0 RETRO_CH2O /home/ckeller/data/emis/RETRO/nc/orig_kgC/methanal.nc     emission_flux 2000/1-12/1/0 xy kg/m2/s CH2O 26    1 3 
+0 RETRO_BENZ /home/ckeller/data/emis/RETRO/nc/orig_kgC/benzene_kgC.nc  emission_flux 2000/1-12/1/0 xy kg/m2/s BENZ 26    1 3 
+0 RETRO_TOLU /home/ckeller/data/emis/RETRO/nc/orig_kgC/toluene_kgC.nc  emission_flux 2000/1-12/1/0 xy kg/m2/s TOLU 26    1 3 
+0 RETRO_XYLE /home/ckeller/data/emis/RETRO/nc/orig_kgC/xylene_kgC.nc   emission_flux 2000/1-12/1/0 xy kg/m2/s XYLE 26    1 3 
+0 RETRO_C2H4 /home/ckeller/data/emis/RETRO/nc/orig_kgC/ethene_kgC.nc   emission_flux 2000/1-12/1/0 xy kg/m2/s C2H4 26    1 3 
+0 RETRO_C2H2 /home/ckeller/data/emis/RETRO/nc/orig_kgC/ethyne_kgC.nc   emission_flux 2000/1-12/1/0 xy kg/m2/s C2H2 26    1 3 
+#0 RETRO_C2H6 /home/ckeller/data/emis/RETRO/nc/orig_kgC/ethane_kgC.nc   emission_flux 2000/1-12/1/0 xy kg/m2/s C2H6 26    1 3 
+#
+# --- Xiao et al., JGR, 2008 ---
+# ==> Don't use C3H8 in standard simulation
+0 XIAO_C2H26 /home/ckeller/data/emis/XIAO/nc/C3H8_C2H6_ngas.geos.1x1.nc C2H6 1985/1/1/0 xy kg/m2/s C2H6 26        1 1000
+#0 XIAO_C3H28 /home/ckeller/data/emis/XIAO/nc/C3H8_C2H6_ngas.geos.1x1.nc C3H8 1985/1/1/0 xy kg/m2/s C3H8 6/7/26/22 1 1000
+
+# --- EMEP (Europe) ---
+0 EMEP_NO   /home/ckeller/data/emis/EMEP/nc/EMEP.update.geos.1x1.nc NO   1990-2007/1/1/0 xy kg/m2/s NO   25/32/1000    1 10
+0 EMEP_CO   /home/ckeller/data/emis/EMEP/nc/EMEP.update.geos.1x1.nc CO   1990-2007/1/1/0 xy kg/m2/s CO   26/33/52/1000 1 10 
+0 EMEP_SO2  /home/ckeller/data/emis/EMEP/nc/EMEP.update.geos.1x1.nc SO2  1990-2007/1/1/0 xy kg/m2/s SO2  61/35/1000    1 10
+0 EMEP_NH3  /home/ckeller/data/emis/EMEP/nc/EMEP.update.geos.1x1.nc NH3  1990-2007/1/1/0 xy kg/m2/s NH3  34/1000       1 10
+0 EMEP_ALK4 /home/ckeller/data/emis/EMEP/nc/EMEP.geos.1x1.nc        ALK4 1980-2000/1/1/0 xy kg/m2/s ALK4 26/1000       1 10
+0 EMEP_ALD2 /home/ckeller/data/emis/EMEP/nc/EMEP.geos.1x1.nc        ALD2 1980-2000/1/1/0 xy kg/m2/s ALD2 26/1000       1 10
+0 EMEP_PRPE /home/ckeller/data/emis/EMEP/nc/EMEP.geos.1x1.nc        PRPE 1980-2000/1/1/0 xy kg/m2/s PRPE 26/1000       1 10
+0 EMEP_MEK  /home/ckeller/data/emis/EMEP/nc/EMEP.geos.1x1.nc        MEK  1980-2000/1/1/0 xy kg/m2/s MEK  26/1000       1 10
+
+# --- BRAVO (Mexico) ---
+0 BRAVO_NO  /home/ckeller/data/emis/BRAVO/nc/BRAVO.generic.1x1.nc NO  1999/1/1/0 xy kg/m2/s NO  1/3/25/1001    1 20
+0 BRAVO_CO  /home/ckeller/data/emis/BRAVO/nc/BRAVO.generic.1x1.nc CO  1999/1/1/0 xy kg/m2/s CO  6/8/26/52/1001 1 20
+0 BRAVO_SO2 /home/ckeller/data/emis/BRAVO/nc/BRAVO.generic.1x1.nc SO2 1999/1/1/0 xy kg/m2/s SO2 11/13/1001     1 20
+
+# --- CAC (Canada) ---
+0 CAC_NO  /home/ckeller/data/emis/CAC/nc/CAC.geos.1x1.nc NO  2000-2008/1/1/0 xy kg/m2/s NO  25/1002    1 30
+0 CAC_CO  /home/ckeller/data/emis/CAC/nc/CAC.geos.1x1.nc CO  2000-2008/1/1/0 xy kg/m2/s CO  26/52/1002 1 30
+0 CAC_SO2 /home/ckeller/data/emis/CAC/nc/CAC.geos.1x1.nc SO2 2000-2008/1/1/0 xy kg/m2/s SO2 1002       1 30
+0 CAC_NH3 /home/ckeller/data/emis/CAC/nc/CAC.geos.1x1.nc NH3 2000-2008/1/1/0 xy kg/m2/s NH3 1002       1 30
+
+# --- STREETS SE ASIA (Zhang et al., 2009) ---
+0 ZHANG_NO__IND   /home/ckeller/data/emis/STREETS/nc/2006/Streets_CO_NO_SO2_2006.generic.1x1.nc NO_ind  2006/1/1/0 xy kg/m2/s NO   1/4/25/36/1003  1 40 
+0 ZHANG_NO__POW   /home/ckeller/data/emis/STREETS/nc/2006/Streets_CO_NO_SO2_2006.generic.1x1.nc NO_pow  2006/1/1/0 xy kg/m2/s NO   1/4/25/36/1003  1 40 
+0 ZHANG_NO__RES   /home/ckeller/data/emis/STREETS/nc/2006/Streets_CO_NO_SO2_2006.generic.1x1.nc NO_res  2006/1/1/0 xy kg/m2/s NO   1/4/25/36/1003  1 40 
+0 ZHANG_NO__TRA   /home/ckeller/data/emis/STREETS/nc/2006/Streets_CO_NO_SO2_2006.generic.1x1.nc NO_tra  2006/1/1/0 xy kg/m2/s NO   1/4/25/36/1003  1 40 
+0 ZHANG_CO__IND   /home/ckeller/data/emis/STREETS/nc/2006/Streets_CO_NO_SO2_2006.generic.1x1.nc CO_ind  2006/1/1/0 xy kg/m2/s CO   6/9/26/37/52/1003 1 40 
+0 ZHANG_CO__POW   /home/ckeller/data/emis/STREETS/nc/2006/Streets_CO_NO_SO2_2006.generic.1x1.nc CO_pow  2006/1/1/0 xy kg/m2/s CO   6/9/26/37/52/1003 1 40 
+0 ZHANG_CO__RES   /home/ckeller/data/emis/STREETS/nc/2006/Streets_CO_NO_SO2_2006.generic.1x1.nc CO_res  2006/1/1/0 xy kg/m2/s CO   6/9/26/37/52/1003 1 40 
+0 ZHANG_CO__TRA   /home/ckeller/data/emis/STREETS/nc/2006/Streets_CO_NO_SO2_2006.generic.1x1.nc CO_tra  2006/1/1/0 xy kg/m2/s CO   6/9/26/37/52/1003 1 40 
+0 ZHANG_SO2__IND  /home/ckeller/data/emis/STREETS/nc/2006/Streets_CO_NO_SO2_2006.generic.1x1.nc SO2_ind 2006/1/1/0 xy kg/m2/s SO2  11/14/1003      1 40 
+0 ZHANG_SO2__POW  /home/ckeller/data/emis/STREETS/nc/2006/Streets_CO_NO_SO2_2006.generic.1x1.nc SO2_pow 2006/1/1/0 xy kg/m2/s SO2  11/14/1003      1 40 
+0 ZHANG_SO2__RES  /home/ckeller/data/emis/STREETS/nc/2006/Streets_CO_NO_SO2_2006.generic.1x1.nc SO2_res 2006/1/1/0 xy kg/m2/s SO2  11/14/1003      1 40 
+0 ZHANG_SO2__TRA  /home/ckeller/data/emis/STREETS/nc/2006/Streets_CO_NO_SO2_2006.generic.1x1.nc SO2_tra 2006/1/1/0 xy kg/m2/s SO2  11/14/1003      1 40 
+#0 ZHANG_C2H6 /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc C2H6_dob     2006/1/1/0 xy kg/m2/s C2H6 26/1003         1 40 
+#0 ZHANG_C2H6 /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc C2H6_dof     2006/1/1/0 xy kg/m2/s C2H6 26/1003         1 40 
+#0 ZHANG_C2H6 /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc C2H6_dop     2006/1/1/0 xy kg/m2/s C2H6 26/1003         1 40 
+#0 ZHANG_C2H6 /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc C2H6_ind     2006/1/1/0 xy kg/m2/s C2H6 26/1003         1 40 
+#0 ZHANG_C2H6 /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc C2H6_pow     2006/1/1/0 xy kg/m2/s C2H6 26/1003         1 40 
+#0 ZHANG_C2H6 /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc C2H6_tra     2006/1/1/0 xy kg/m2/s C2H6 26/1003         1 40 
+0 ZHANG_C3H8__DOB /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc C3H8_dob     2006/1/1/0 xy kg/m2/s C3H8 26/1003         1 40 
+0 ZHANG_C3H8__DOF /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc C3H8_dof     2006/1/1/0 xy kg/m2/s C3H8 26/1003         1 40 
+0 ZHANG_C3H8__DOP /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc C3H8_dop     2006/1/1/0 xy kg/m2/s C3H8 26/1003         1 40 
+0 ZHANG_C3H8__IND /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc C3H8_ind     2006/1/1/0 xy kg/m2/s C3H8 26/1003         1 40 
+0 ZHANG_C3H8__POW /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc C3H8_pow     2006/1/1/0 xy kg/m2/s C3H8 26/1003         1 40 
+0 ZHANG_C3H8__TRA /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc C3H8_tra     2006/1/1/0 xy kg/m2/s C3H8 26/1003         1 40 
+0 ZHANG_CH2O__DOB /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc CH2O_dob     2006/1/1/0 xy kg/m2/s CH2O 26/1003         1 40 
+0 ZHANG_CH2O__DOF /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc CH2O_dof     2006/1/1/0 xy kg/m2/s CH2O 26/1003         1 40 
+0 ZHANG_CH2O__DOP /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc CH2O_dop     2006/1/1/0 xy kg/m2/s CH2O 26/1003         1 40 
+0 ZHANG_CH2O__IND /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc CH2O_ind     2006/1/1/0 xy kg/m2/s CH2O 26/1003         1 40 
+0 ZHANG_CH2O__POW /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc CH2O_pow     2006/1/1/0 xy kg/m2/s CH2O 26/1003         1 40 
+0 ZHANG_CH2O__TRA /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc CH2O_tra     2006/1/1/0 xy kg/m2/s CH2O 26/1003         1 40 
+0 ZHANG_ALK4__DOB /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ALK4_dob     2006/1/1/0 xy kg/m2/s ALK4 26/1003         1 40 
+0 ZHANG_ALK4__DOF /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ALK4_dof     2006/1/1/0 xy kg/m2/s ALK4 26/1003         1 40 
+0 ZHANG_ALK4__DOP /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ALK4_dop     2006/1/1/0 xy kg/m2/s ALK4 26/1003         1 40 
+0 ZHANG_ALK4__IND /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ALK4_ind     2006/1/1/0 xy kg/m2/s ALK4 26/1003         1 40 
+0 ZHANG_ALK4__POW /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ALK4_pow     2006/1/1/0 xy kg/m2/s ALK4 26/1003         1 40 
+0 ZHANG_ALK4__TRA /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ALK4_tra     2006/1/1/0 xy kg/m2/s ALK4 26/1003         1 40 
+0 ZHANG_ACET__DOB /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ACET_dob     2006/1/1/0 xy kg/m2/s ACET 26/1003         1 40 
+0 ZHANG_ACET__DOF /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ACET_dof     2006/1/1/0 xy kg/m2/s ACET 26/1003         1 40 
+0 ZHANG_ACET__DOP /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ACET_dop     2006/1/1/0 xy kg/m2/s ACET 26/1003         1 40 
+0 ZHANG_ACET__IND /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ACET_ind     2006/1/1/0 xy kg/m2/s ACET 26/1003         1 40 
+0 ZHANG_ACET__POW /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ACET_pow     2006/1/1/0 xy kg/m2/s ACET 26/1003         1 40 
+0 ZHANG_ACET__TRA /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ACET_tra     2006/1/1/0 xy kg/m2/s ACET 26/1003         1 40 
+0 ZHANG_MEK__DOB  /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc MEK_dob      2006/1/1/0 xy kg/m2/s MEK  26/1003         1 40 
+0 ZHANG_MEK__DOF  /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc MEK_dof      2006/1/1/0 xy kg/m2/s MEK  26/1003         1 40 
+0 ZHANG_MEK__DOP  /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc MEK_dop      2006/1/1/0 xy kg/m2/s MEK  26/1003         1 40 
+0 ZHANG_MEK__IND  /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc MEK_ind      2006/1/1/0 xy kg/m2/s MEK  26/1003         1 40 
+0 ZHANG_MEK__POW  /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc MEK_pow      2006/1/1/0 xy kg/m2/s MEK  26/1003         1 40 
+0 ZHANG_MEK__TRA  /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc MEK_tra      2006/1/1/0 xy kg/m2/s MEK  26/1003         1 40 
+0 ZHANG_ALD2__DOB /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ALD2_dob     2006/1/1/0 xy kg/m2/s ALD2 26/1003         1 40 
+0 ZHANG_ALD2__DOF /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ALD2_dof     2006/1/1/0 xy kg/m2/s ALD2 26/1003         1 40 
+0 ZHANG_ALD2__DOP /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ALD2_dop     2006/1/1/0 xy kg/m2/s ALD2 26/1003         1 40 
+0 ZHANG_ALD2__IND /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ALD2_ind     2006/1/1/0 xy kg/m2/s ALD2 26/1003         1 40 
+0 ZHANG_ALD2__POW /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ALD2_pow     2006/1/1/0 xy kg/m2/s ALD2 26/1003         1 40 
+0 ZHANG_ALD2__TRA /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc ALD2_tra     2006/1/1/0 xy kg/m2/s ALD2 26/1003         1 40 
+0 ZHANG_PRPE__DOB /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc PRPE_dob     2006/1/1/0 xy kg/m2/s PRPE 26/1003         1 40 
+0 ZHANG_PRPE__DOF /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc PRPE_dof     2006/1/1/0 xy kg/m2/s PRPE 26/1003         1 40 
+0 ZHANG_PRPE__DOP /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc PRPE_dop     2006/1/1/0 xy kg/m2/s PRPE 26/1003         1 40 
+0 ZHANG_PRPE__IND /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc PRPE_ind     2006/1/1/0 xy kg/m2/s PRPE 26/1003         1 40 
+0 ZHANG_PRPE__POW /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc PRPE_pow     2006/1/1/0 xy kg/m2/s PRPE 26/1003         1 40 
+0 ZHANG_PRPE__TRA /home/ckeller/data/emis/STREETS/nc/2006/Streets_VOCs_2006.generic.1x1.nc PRPE_tra     2006/1/1/0 xy kg/m2/s PRPE 26/1003         1 40 
+# NH3 emissions are only available for year 2000:
+0 STREETS_NH3 /home/ckeller/data/emis/STREETS/nc/2000/Streets_2000.generic.1x1.nc NH3_tot 2000/1/1/0 xy kg/m2/s NH3 1003 1 40 
+
+# --- Bromocarbon emissions ---
+0 LIANG_CHBR3  /home/ckeller/data/emis/BROMINE/Bromocarb_Liang2010.nc CHBr3_emission  2000/1/1/0 xy kg/m2/s CHBr3  38 1 1
+0 LIANG_CH2BR2 /home/ckeller/data/emis/BROMINE/Bromocarb_Liang2010.nc CH2Br2_emission 2000/1/1/0 xy kg/m2/s CH2Br2 38 1 1
+
+# --- Ship emissions ---
+# Don't list ship NO emissions here because they are used by ParaNOx extensions and hence treated separately below
+#0 ARCTAS_SHIP_SO2 /home/ckeller/data/emis/ARCTAS_SHIP/nc/ARCTAS_ship.generic.1x1.nc  SO2      2008/1/1/0      xy kg/m2/s SO2 11          10 1
+#0 CORBETT_SHIP_SO2 /home/ckeller/data/emis/CORBETT_SHIP/nc/CORBETT_ship.geos.1x1.nc SO2_SHIP 1985/1-12/1/0   xy kg/m2/s SO2 -           10 3
+0 ICOADS_SHIP_SO2 /home/ckeller/data/emis/ICOADS_SHIP/nc/ICOADS_ship.geos.1x1.nc    SO2      2002/1-12/1/0   xy kg/m2/s SO2 7/106/60/62 10 5
+0 ICOADS_SHIP_CO  /home/ckeller/data/emis/ICOADS_SHIP/nc/ICOADS_ship.geos.1x1.nc    CO       2002/1-12/1/0   xy kg/m2/s CO  6/10        10 1
+#0 EDGAR_SHIP_CO /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc             CO.f5800 2000/1/1/0      xy kg/m2/s CO  6           10 1
+0 EMEP_SHIP_CO  /home/ckeller/data/emis/EMEP/nc/EMEP.update.geos.1x1.nc           shipCO   1990-2007/1/1/0 xy kg/m2/s CO  1000        10 2
+0 EMEP_SHIP_SO2 /home/ckeller/data/emis/EMEP/nc/EMEP.update.geos.1x1.nc           shipSO2  1990-2007/1/1/0 xy kg/m2/s SO2 1000        10 2
+
+# --- BC/OC emissions from Tami Bond ---
+0 BOND_ANTH_BCPI    /home/ckeller/data/emis/BCOC_BOND/nc/Bond_fossil.nc  BCPI 2000/1-12/1/0 xy kg/m2/s BCPI 70 1 1
+0 BOND_ANTH_BCPO    /home/ckeller/data/emis/BCOC_BOND/nc/Bond_fossil.nc  BCPI 2000/1-12/1/0 xy kg/m2/s BCPO 71 1 1
+0 BOND_ANTH_OCPI    /home/ckeller/data/emis/BCOC_BOND/nc/Bond_fossil.nc  OCPI 2000/1-12/1/0 xy kg/m2/s OCPI 72 1 1
+0 BOND_ANTH_OCPO    /home/ckeller/data/emis/BCOC_BOND/nc/Bond_fossil.nc  OCPI 2000/1-12/1/0 xy kg/m2/s OCPO 73 1 1
+0 BOND_BF_BCPI      /home/ckeller/data/emis/BCOC_BOND/nc/Bond_biofuel.nc BCPI 2000/1-12/1/0 xy kg/m2/s BCPI 70 2 1
+0 BOND_BF_BCPO      /home/ckeller/data/emis/BCOC_BOND/nc/Bond_biofuel.nc BCPI 2000/1-12/1/0 xy kg/m2/s BCPO 71 2 1
+0 BOND_BF_OCPI      /home/ckeller/data/emis/BCOC_BOND/nc/Bond_biofuel.nc OCPI 2000/1-12/1/0 xy kg/m2/s OCPI 72 2 1
+0 BOND_BF_OCPO      /home/ckeller/data/emis/BCOC_BOND/nc/Bond_biofuel.nc OCPI 2000/1-12/1/0 xy kg/m2/s OCPO 73 2 1
+0 BOND_BIOMASS_BCPI /home/ckeller/data/emis/BCOC_BOND/nc/Bond_biomass.nc BCPI 2001/1/1/0    xy kg/m2/s BCPI 70 3 1
+0 BOND_BIOMASS_BCPO /home/ckeller/data/emis/BCOC_BOND/nc/Bond_biomass.nc BCPI 2001/1/1/0    xy kg/m2/s BCPO 71 3 1
+0 BOND_BIOMASS_OCPI /home/ckeller/data/emis/BCOC_BOND/nc/Bond_biomass.nc OCPI 2001/1/1/0    xy kg/m2/s OCPI 72 3 1
+0 BOND_BIOMASS_OCPO /home/ckeller/data/emis/BCOC_BOND/nc/Bond_biomass.nc OCPI 2001/1/1/0    xy kg/m2/s OCPO 73 3 1
+
+# --- BC/OC emissions over NA from Cooke et al. (1999) ---
+# ==> don't use in standard simulation
+#0 COOKE_ANTH_BCPI /home/ckeller/data/emis/BCOC_COOKE/nc/BCOC_Cooke_fossil.gen.1x1.nc  BCPI 1998/1-12/1/0 xy kg/m2/s BCPI 70/1004 1 2
+#0 COOKE_ANTH_OCPI /home/ckeller/data/emis/BCOC_COOKE/nc/BCOC_Cooke_fossil.gen.1x1.nc  OCPI 1998/1-12/1/0 xy kg/m2/s OCPI 72/1004 1 2
+#0 COOKE_BF_BCPI   /home/ckeller/data/emis/BCOC_COOKE/nc/BCOC_Cooke_biofuel.gen.1x1.nc BCPI 1998/1-12/1/0 xy kg/m2/s BCPI 70/1004 2 2
+#0 COOKE_BF_OCPI   /home/ckeller/data/emis/BCOC_COOKE/nc/BCOC_Cooke_biofuel.gen.1x1.nc OCPI 1998/1-12/1/0 xy kg/m2/s OCPI 72/1004 2 2
+
+# --- Volcanic emissions ---
+0 VOLCANO_SO2 /home/ckeller/data/emis/VOLCANO/volc_so2_gen1x1.nc SO2 1979-2009/1-12/1-31/0 xyz kg/m2/s SO2 - 50 1
+
+# --- AEIC aircraft emissions ---
+# Specify here the conversion factors. The real emission field will be read as
+# scale factor. This is done in order to avoid multiple readings of exactly the 
+# same field. A downside of this approach is that the base fields need to be on 
+# the proper units already (since no unit conversion is performed on them).
+# Sulfur conversion factors are calculated as so4 = 3 * a * b and so2 = 2 * a * (1-b)
+# where a = fraction by mass (6.0e-4) and b = conversion efficiency (2.0e-2).
+# The factors 2 and 3 come from sulfur mass conversions (96/32 and 64/32).
+# All factors are taken from AEIC_mod.F, following Seb Estham's appraoch.
+# Note that all emissions become multiplied by a factor of 1e-3 (except for the
+# fuelburn emissions) in the original AEIC code. I'm not sure if this is because
+# the netCDF data is in g instead of kg?
+0 AEIC_NO   1.000e-3 - - xy unitless NO   81     20 1
+0 AEIC_CO   1.000e-3 - - xy unitless CO   82     20 1
+0 AEIC_SO2  1.176e-3 - - xy unitless SO2  83     20 1
+0 AEIC_SO4  3.600e-5 - - xy unitless SO4  83     20 1
+0 AEIC_BC   3.000e-5 - - xy unitless BCPI 83     20 1
+0 AEIC_OC   3.000e-5 - - xy unitless OCPI 83     20 1
+0 AEIC_ACET 1.160e-3 - - xy unitless ACET 84/101 20 1
+0 AEIC_ALD2 1.160e-3 - - xy unitless ALD2 84/102 20 1
+0 AEIC_ALK4 1.160e-3 - - xy unitless ALK4 84/103 20 1
+0 AEIC_C2H6 1.160e-3 - - xy unitless C2H6 84/104 20 1
+0 AEIC_C3H8 1.160e-3 - - xy unitless C3H8 84/105 20 1
+0 AEIC_CH2O 1.160e-3 - - xy unitless CH2O 84/106 20 1
+0 AEIC_PRPE 1.160e-3 - - xy unitless PRPE 84/107 20 1
+0 AEIC_MACR 1.160e-3 - - xy unitless MACR 84/108 20 1
+0 AEIC_RCHO 1.160e-3 - - xy unitless RCHO 84/109 20 1
+
+# --- GFED 3 emissions
+# ==> report here only emission factors in kg/kgDM or kgC/kgDM. Dry matter (DM) emissions in
+#     kgDM/m2/s are passed as scale factor!
+0 GFED3_NO_AGW  2.29e-3 - - xy kg/kgDM NO 121/128/129      30 1
+0 GFED3_NO_DEFA 2.26e-3 - - xy kg/kgDM NO 122/128/129/1010 30 1
+0 GFED3_NO_DEFB 2.19e-3 - - xy kg/kgDM NO 122/128/129/1011 30 1
+0 GFED3_NO_FOR  3.41e-3 - - xy kg/kgDM NO 123/128/129      30 1
+0 GFED3_NO_PET  2.26e-3 - - xy kg/kgDM NO 124/128/129      30 1
+0 GFED3_NO_SAV  2.12e-3 - - xy kg/kgDM NO 125/128/129      30 1
+0 GFED3_NO_WDL  2.19e-3 - - xy kg/kgDM NO 126/128/129      30 1
+#-
+0 GFED3_CO_AGW  9.22e-2 - - xy kg/kgDM CO 54/121/128/129      30 1
+0 GFED3_CO_DEFA 1.01e-1 - - xy kg/kgDM CO 54/122/128/129/1010 30 1
+0 GFED3_CO_DEFB 8.17e-2 - - xy kg/kgDM CO 54/122/128/129/1011 30 1
+0 GFED3_CO_FOR  1.06e-1 - - xy kg/kgDM CO 54/123/128/129      30 1
+0 GFED3_CO_PET  2.10e-1 - - xy kg/kgDM CO 54/124/128/129      30 1
+0 GFED3_CO_SAV  6.25e-2 - - xy kg/kgDM CO 54/125/128/129      30 1
+0 GFED3_CO_WDL  8.17e-2 - - xy kg/kgDM CO 54/126/128/129      30 1
+#-
+0 GFED3_ALK4_AGW  1.91e-4 - - xy kg/kgDM ALK4 121/128/129      30 1
+0 GFED3_ALK4_DEFA 1.92e-4 - - xy kg/kgDM ALK4 122/128/129/1010 30 1
+0 GFED3_ALK4_DEFB 1.53e-4 - - xy kg/kgDM ALK4 122/128/129/1011 30 1
+0 GFED3_ALK4_FOR  2.99e-4 - - xy kg/kgDM ALK4 123/128/129      30 1
+0 GFED3_ALK4_PET  1.92e-4 - - xy kg/kgDM ALK4 124/128/129      30 1
+0 GFED3_ALK4_SAV  1.11e-4 - - xy kg/kgDM ALK4 125/128/129      30 1
+0 GFED3_ALK4_WDL  1.53e-4 - - xy kg/kgDM ALK4 126/128/129      30 1
+#-
+0 GFED3_ACET_AGW  7.01e-4 - - xy kg/kgDM ACET 121/128/129      30 1
+0 GFED3_ACET_DEFA 3.91e-4 - - xy kg/kgDM ACET 122/128/129/1010 30 1
+0 GFED3_ACET_DEFB 3.47e-4 - - xy kg/kgDM ACET 122/128/129/1011 30 1
+0 GFED3_ACET_FOR  4.18e-4 - - xy kg/kgDM ACET 123/128/129      30 1
+0 GFED3_ACET_PET  3.91e-4 - - xy kg/kgDM ACET 124/128/129      30 1
+0 GFED3_ACET_SAV  3.02e-4 - - xy kg/kgDM ACET 125/128/129      30 1
+0 GFED3_ACET_WDL  3.47e-4 - - xy kg/kgDM ACET 126/128/129      30 1
+#-
+0 GFED3_MEK_AGW  6.89e-4 - - xy kg/kgDM MEK 121/128/129      30 1
+0 GFED3_MEK_DEFA 3.91e-4 - - xy kg/kgDM MEK 122/128/129/1010 30 1
+0 GFED3_MEK_DEFB 2.93e-4 - - xy kg/kgDM MEK 122/128/129/1011 30 1
+0 GFED3_MEK_FOR  3.87e-4 - - xy kg/kgDM MEK 123/128/129      30 1
+0 GFED3_MEK_PET  3.91e-4 - - xy kg/kgDM MEK 124/128/129      30 1
+0 GFED3_MEK_SAV  1.93e-4 - - xy kg/kgDM MEK 125/128/129      30 1
+0 GFED3_MEK_WDL  2.93e-4 - - xy kg/kgDM MEK 126/128/129      30 1
+#-
+0 GFED3_ALD2_AGW  1.51e-3 - - xy kg/kgDM ALD2 121/128/129      30 1
+0 GFED3_ALD2_DEFA 1.23e-3 - - xy kg/kgDM ALD2 122/128/129/1010 30 1
+0 GFED3_ALD2_DEFB 7.52e-4 - - xy kg/kgDM ALD2 122/128/129/1011 30 1
+0 GFED3_ALD2_FOR  5.34e-4 - - xy kg/kgDM ALD2 123/128/129      30 1
+0 GFED3_ALD2_PET  1.23e-3 - - xy kg/kgDM ALD2 124/128/129      30 1
+0 GFED3_ALD2_SAV  2.72e-4 - - xy kg/kgDM ALD2 125/128/129      30 1
+0 GFED3_ALD2_WDL  7.52e-4 - - xy kg/kgDM ALD2 126/128/129      30 1
+#-
+0 GFED3_PRPE_AGW  4.90e-4 - - xy kg/kgDM PRPE 121/128/129      30 1
+0 GFED3_PRPE_DEFA 6.54e-4 - - xy kg/kgDM PRPE 122/128/129/1010 30 1
+0 GFED3_PRPE_DEFB 4.85e-4 - - xy kg/kgDM PRPE 122/128/129/1011 30 1
+0 GFED3_PRPE_FOR  4.89e-4 - - xy kg/kgDM PRPE 123/128/129      30 1
+0 GFED3_PRPE_PET  6.54e-4 - - xy kg/kgDM PRPE 124/128/129      30 1
+0 GFED3_PRPE_SAV  3.15e-4 - - xy kg/kgDM PRPE 125/128/129      30 1
+0 GFED3_PRPE_WDL  4.85e-4 - - xy kg/kgDM PRPE 126/128/129      30 1
+#-
+0 GFED3_C3H8_AGW  1.35e-4 - - xy kg/kgDM C3H8 121/128/129      30 1
+0 GFED3_C3H8_DEFA 4.39e-4 - - xy kg/kgDM C3H8 122/128/129/1010 30 1
+0 GFED3_C3H8_DEFB 2.59e-4 - - xy kg/kgDM C3H8 122/128/129/1011 30 1
+0 GFED3_C3H8_FOR  2.19e-4 - - xy kg/kgDM C3H8 123/128/129      30 1
+0 GFED3_C3H8_PET  4.39e-4 - - xy kg/kgDM C3H8 124/128/129      30 1
+0 GFED3_C3H8_SAV  7.94e-5 - - xy kg/kgDM C3H8 125/128/129      30 1
+0 GFED3_C3H8_WDL  2.59e-4 - - xy kg/kgDM C3H8 126/128/129      30 1
+#-
+0 GFED3_CH2O_AGW  2.12e-3 - - xy kg/kgDM CH2O 121/128/129      30 1
+0 GFED3_CH2O_DEFA 2.22e-3 - - xy kg/kgDM CH2O 122/128/129/1010 30 1
+0 GFED3_CH2O_DEFB 1.54e-3 - - xy kg/kgDM CH2O 122/128/129/1011 30 1
+0 GFED3_CH2O_FOR  2.24e-3 - - xy kg/kgDM CH2O 123/128/129      30 1
+0 GFED3_CH2O_PET  2.22e-3 - - xy kg/kgDM CH2O 124/128/129      30 1
+0 GFED3_CH2O_SAV  8.66e-4 - - xy kg/kgDM CH2O 125/128/129      30 1
+0 GFED3_CH2O_WDL  1.54e-3 - - xy kg/kgDM CH2O 126/128/129      30 1
+#-
+0 GFED3_C2H6_AGW  9.91e-4 - - xy kg/kgDM C2H6 121/128/129      30 1
+0 GFED3_C2H6_DEFA 7.05e-4 - - xy kg/kgDM C2H6 122/128/129/1010 30 1
+0 GFED3_C2H6_DEFB 5.09e-4 - - xy kg/kgDM C2H6 122/128/129/1011 30 1
+0 GFED3_C2H6_FOR  5.37e-4 - - xy kg/kgDM C2H6 123/128/129      30 1
+0 GFED3_C2H6_PET  7.05e-4 - - xy kg/kgDM C2H6 124/128/129      30 1
+0 GFED3_C2H6_SAV  3.12e-4 - - xy kg/kgDM C2H6 125/128/129      30 1
+0 GFED3_C2H6_WDL  5.09e-4 - - xy kg/kgDM C2H6 126/128/129      30 1
+#-
+#0 GFED3_SO2_AGW  4.00e-4 - - xy kg/kgDM SO2 121/128/129      30 1
+#0 GFED3_SO2_DEFA 7.59e-4 - - xy kg/kgDM SO2 122/128/129/1010 30 1
+#0 GFED3_SO2_DEFB 5.48e-4 - - xy kg/kgDM SO2 122/128/129/1011 30 1
+#0 GFED3_SO2_FOR  9.99e-4 - - xy kg/kgDM SO2 123/128/129      30 1
+#0 GFED3_SO2_PET  7.59e-4 - - xy kg/kgDM SO2 124/128/129      30 1
+#0 GFED3_SO2_SAV  3.37e-4 - - xy kg/kgDM SO2 125/128/129      30 1
+#0 GFED3_SO2_WDL  5.48e-4 - - xy kg/kgDM SO2 126/128/129      30 1
+#-
+#0 GFED3_NH3_AGW  1.62e-3 - - xy kg/kgDM NH3 121/128/129      30 1
+#0 GFED3_NH3_DEFA 9.36e-4 - - xy kg/kgDM NH3 122/128/129/1010 30 1
+#0 GFED3_NH3_DEFB 8.93e-4 - - xy kg/kgDM NH3 122/128/129/1011 30 1
+#0 GFED3_NH3_FOR  1.55e-3 - - xy kg/kgDM NH3 123/128/129      30 1
+#0 GFED3_NH3_PET  9.36e-4 - - xy kg/kgDM NH3 124/128/129      30 1
+#0 GFED3_NH3_SAV  8.49e-4 - - xy kg/kgDM NH3 125/128/129      30 1
+#0 GFED3_NH3_WDL  8.93e-4 - - xy kg/kgDM NH3 126/128/129      30 1
+#-
+#0 GFED3_BCPI_AGW  4.21e-4 - - xy kg/kgDM BCPI 121/128/129      30 1
+#0 GFED3_BCPI_DEFA 5.65e-4 - - xy kg/kgDM BCPI 122/128/129/1010 30 1
+#0 GFED3_BCPI_DEFB 5.13e-4 - - xy kg/kgDM BCPI 122/128/129/1011 30 1
+#0 GFED3_BCPI_FOR  5.62e-4 - - xy kg/kgDM BCPI 123/128/129      30 1
+#0 GFED3_BCPI_PET  5.65e-4 - - xy kg/kgDM BCPI 124/128/129      30 1
+#0 GFED3_BCPI_SAV  4.61e-4 - - xy kg/kgDM BCPI 125/128/129      30 1
+#0 GFED3_BCPI_WDL  5.13e-4 - - xy kg/kgDM BCPI 126/128/129      30 1
+#-
+#0 GFED3_OCPI_AGW  4.15e-3 - - xy kg/kgDM OCPI 121/128/129      30 1
+#0 GFED3_OCPI_DEFA 4.30e-3 - - xy kg/kgDM OCPI 122/128/129/1010 30 1
+#0 GFED3_OCPI_DEFB 3.76e-3 - - xy kg/kgDM OCPI 122/128/129/1011 30 1
+#0 GFED3_OCPI_FOR  9.14e-3 - - xy kg/kgDM OCPI 123/128/129      30 1
+#0 GFED3_OCPI_PET  4.30e-3 - - xy kg/kgDM OCPI 124/128/129      30 1
+#0 GFED3_OCPI_SAV  3.21e-3 - - xy kg/kgDM OCPI 125/128/129      30 1
+#0 GFED3_OCPI_WDL  3.76e-3 - - xy kg/kgDM OCPI 126/128/129      30 1
+#-
+0 GFED3_GLYX_AGW  9.95e-4 - - xy kg/kgDM GLYX 121/128/129      30 1
+0 GFED3_GLYX_DEFA 9.95e-4 - - xy kg/kgDM GLYX 122/128/129/1010 30 1
+0 GFED3_GLYX_DEFB 9.95e-4 - - xy kg/kgDM GLYX 122/128/129/1011 30 1
+0 GFED3_GLYX_FOR  9.95e-4 - - xy kg/kgDM GLYX 123/128/129      30 1
+0 GFED3_GLYX_PET  9.95e-4 - - xy kg/kgDM GLYX 124/128/129      30 1
+0 GFED3_GLYX_SAV  9.95e-4 - - xy kg/kgDM GLYX 125/128/129      30 1
+0 GFED3_GLYX_WDL  9.95e-4 - - xy kg/kgDM GLYX 126/128/129      30 1
+#-
+0 GFED3_MGLY_AGW  7.30e-4 - - xy kg/kgDM MGLY 121/128/129      30 1
+0 GFED3_MGLY_DEFA 7.30e-4 - - xy kg/kgDM MGLY 122/128/129/1010 30 1
+0 GFED3_MGLY_DEFB 7.30e-4 - - xy kg/kgDM MGLY 122/128/129/1011 30 1
+0 GFED3_MGLY_FOR  7.30e-4 - - xy kg/kgDM MGLY 123/128/129      30 1
+0 GFED3_MGLY_PET  7.30e-4 - - xy kg/kgDM MGLY 124/128/129      30 1
+0 GFED3_MGLY_SAV  7.30e-4 - - xy kg/kgDM MGLY 125/128/129      30 1
+0 GFED3_MGLY_WDL  7.30e-4 - - xy kg/kgDM MGLY 126/128/129      30 1
+#-
+0 GFED3_BENZ_AGW  2.83e-4 - - xy kg/kgDM BENZ 121/128/129      30 1
+0 GFED3_BENZ_DEFA 3.50e-4 - - xy kg/kgDM BENZ 122/128/129/1010 30 1
+0 GFED3_BENZ_DEFB 3.09e-4 - - xy kg/kgDM BENZ 122/128/129/1011 30 1
+0 GFED3_BENZ_FOR  4.81e-4 - - xy kg/kgDM BENZ 123/128/129      30 1
+0 GFED3_BENZ_PET  3.50e-4 - - xy kg/kgDM BENZ 124/128/129      30 1
+0 GFED3_BENZ_SAV  2.68e-4 - - xy kg/kgDM BENZ 125/128/129      30 1
+0 GFED3_BENZ_WDL  3.09e-4 - - xy kg/kgDM BENZ 126/128/129      30 1
+#-
+0 GFED3_TOLU_AGW  1.67e-4 - - xy kg/kgDM TOLU 121/128/129      30 1
+0 GFED3_TOLU_DEFA 2.10e-4 - - xy kg/kgDM TOLU 122/128/129/1010 30 1
+0 GFED3_TOLU_DEFB 1.86e-4 - - xy kg/kgDM TOLU 122/128/129/1011 30 1
+0 GFED3_TOLU_FOR  3.63e-4 - - xy kg/kgDM TOLU 123/128/129      30 1
+0 GFED3_TOLU_PET  2.10e-4 - - xy kg/kgDM TOLU 124/128/129      30 1
+0 GFED3_TOLU_SAV  1.62e-4 - - xy kg/kgDM TOLU 125/128/129      30 1
+0 GFED3_TOLU_WDL  1.86e-4 - - xy kg/kgDM TOLU 126/128/129      30 1
+#-
+0 GFED3_XYLE_AGW  1.03e-4 - - xy kg/kgDM XYLE 121/128/129      30 1
+0 GFED3_XYLE_DEFA 7.88e-5 - - xy kg/kgDM XYLE 122/128/129/1010 30 1
+0 GFED3_XYLE_DEFB 5.89e-5 - - xy kg/kgDM XYLE 122/128/129/1011 30 1
+0 GFED3_XYLE_FOR  1.85e-5 - - xy kg/kgDM XYLE 123/128/129      30 1
+0 GFED3_XYLE_PET  7.88e-5 - - xy kg/kgDM XYLE 124/128/129      30 1
+0 GFED3_XYLE_SAV  3.89e-5 - - xy kg/kgDM XYLE 125/128/129      30 1
+0 GFED3_XYLE_WDL  5.89e-5 - - xy kg/kgDM XYLE 126/128/129      30 1
+#-
+0 GFED3_C2H4_AGW  1.14e-3 - - xy kg/kgDM C2H4 121/128/129      30 1
+0 GFED3_C2H4_DEFA 9.80e-4 - - xy kg/kgDM C2H4 122/128/129/1010 30 1
+0 GFED3_C2H4_DEFB 8.61e-4 - - xy kg/kgDM C2H4 122/128/129/1011 30 1
+0 GFED3_C2H4_FOR  9.40e-4 - - xy kg/kgDM C2H4 123/128/129      30 1
+0 GFED3_C2H4_PET  9.80e-4 - - xy kg/kgDM C2H4 124/128/129      30 1
+0 GFED3_C2H4_SAV  7.41e-4 - - xy kg/kgDM C2H4 125/128/129      30 1
+0 GFED3_C2H4_WDL  8.61e-4 - - xy kg/kgDM C2H4 126/128/129      30 1
+#-
+0 GFED3_C2H2_AGW  2.00e-4 - - xy kg/kgDM C2H2 121/128/129      30 1
+0 GFED3_C2H2_DEFA 1.82e-4 - - xy kg/kgDM C2H2 122/128/129/1010 30 1
+0 GFED3_C2H2_DEFB 2.37e-4 - - xy kg/kgDM C2H2 122/128/129/1011 30 1
+0 GFED3_C2H2_FOR  2.38e-4 - - xy kg/kgDM C2H2 123/128/129      30 1
+0 GFED3_C2H2_PET  1.82e-4 - - xy kg/kgDM C2H2 124/128/129      30 1
+0 GFED3_C2H2_SAV  2.92e-4 - - xy kg/kgDM C2H2 125/128/129      30 1
+0 GFED3_C2H2_WDL  2.37e-4 - - xy kg/kgDM C2H2 126/128/129      30 1
+#-
+# GLYC_AGW EMISSIONS ARE ZERO
+#0 GFED3_GLYC_DEFA 9.57e-4 - - xy kg/kgDM GLYC 122/128/129/1010 30 1
+#0 GFED3_GLYC_DEFB 9.57e-4 - - xy kg/kgDM GLYC 122/128/129/1011 30 1
+#0 GFED3_GLYC_FOR  9.57e-4 - - xy kg/kgDM GLYC 123/128/129      30 1
+#0 GFED3_GLYC_PET  9.57e-4 - - xy kg/kgDM GLYC 124/128/129      30 1
+#0 GFED3_GLYC_SAV  9.57e-4 - - xy kg/kgDM GLYC 125/128/129      30 1
+#0 GFED3_GLYC_WDL  9.57e-4 - - xy kg/kgDM GLYC 126/128/129      30 1
+#-
+0 GFED3_CO2_AGW  1.31    - - xy kg/kgDM CO2 121/128/129      30 1
+0 GFED3_CO2_DEFA 1.63    - - xy kg/kgDM CO2 122/128/129/1010 30 1
+0 GFED3_CO2_DEFB 1.64    - - xy kg/kgDM CO2 122/128/129/1011 30 1
+0 GFED3_CO2_FOR  1.57    - - xy kg/kgDM CO2 123/128/129      30 1
+0 GFED3_CO2_PET  1.70    - - xy kg/kgDM CO2 124/128/129      30 1
+0 GFED3_CO2_SAV  1.65    - - xy kg/kgDM CO2 125/128/129      30 1
+0 GFED3_CO2_WDL  1.64    - - xy kg/kgDM CO2 126/128/129      30 1
+#-
+0 GFED3_CH4_AGW  8.80e-3 - - xy kg/kgDM CH4 121/128/129      30 1
+0 GFED3_CH4_DEFA 6.60e-3 - - xy kg/kgDM CH4 122/128/129/1010 30 1
+0 GFED3_CH4_DEFB 4.40e-3 - - xy kg/kgDM CH4 122/128/129/1011 30 1
+0 GFED3_CH4_FOR  4.80e-3 - - xy kg/kgDM CH4 123/128/129      30 1
+0 GFED3_CH4_PET  2.08e-2 - - xy kg/kgDM CH4 124/128/129      30 1
+0 GFED3_CH4_SAV  2.20e-3 - - xy kg/kgDM CH4 125/128/129      30 1
+0 GFED3_CH4_WDL  4.40e-3 - - xy kg/kgDM CH4 126/128/129      30 1
+
+END SECTION BASE EMISSIONS 
+
+####################################################################################
+BEGIN SECTION SCALE FACTORS 
+####################################################################################
+
+# ScalID Name sourceFile sourceVar sourceTime SrcDim SrcUnit Oper
+
+# --- annual scale factors ---
+1  TOTFUEL_THISYR /home/ckeller/data/emis/AnnualScalar/nc/NOx-AnnualScalar.geos.1x1.nc           NOXscalar 1985-2008/1/1/0 xy unitless  1
+2  TOTFUEL_1985   /home/ckeller/data/emis/AnnualScalar/nc/NOx-AnnualScalar.geos.1x1.nc           NOXscalar 1985/1/1/0      xy unitless -1
+3  TOTFUEL_1999   /home/ckeller/data/emis/AnnualScalar/nc/NOx-AnnualScalar.geos.1x1.nc           NOXscalar 1999/1/1/0      xy unitless -1
+4  TOTFUEL_2006   /home/ckeller/data/emis/AnnualScalar/nc/NOx-AnnualScalar.geos.1x1.nc           NOXscalar 2006/1/1/0      xy unitless -1
+5  TOTFUEL_2002   /home/ckeller/data/emis/AnnualScalar/nc/NOx-AnnualScalar.geos.1x1.nc           NOXscalar 2002/1/1/0      xy unitless -1
+6  LIQFUEL_THISYR /home/ckeller/data/emis/AnnualScalar/nc/CO-AnnualScalar.201105-Fix.geos.1x1.nc COscalar  1985-2008/1/1/0 xy unitless  1
+7  LIQFUEL_1985   /home/ckeller/data/emis/AnnualScalar/nc/CO-AnnualScalar.201105-Fix.geos.1x1.nc COscalar  1985/1/1/0      xy unitless -1
+8  LIQFUEL_1999   /home/ckeller/data/emis/AnnualScalar/nc/CO-AnnualScalar.201105-Fix.geos.1x1.nc COscalar  1999/1/1/0      xy unitless -1
+9  LIQFUEL_2006   /home/ckeller/data/emis/AnnualScalar/nc/CO-AnnualScalar.201105-Fix.geos.1x1.nc COscalar  2006/1/1/0      xy unitless -1
+10 LIQFUEL_2002   /home/ckeller/data/emis/AnnualScalar/nc/CO-AnnualScalar.201105-Fix.geos.1x1.nc COscalar  2002/1/1/0      xy unitless -1
+11 SOLFUEL_THISYR /home/ckeller/data/emis/AnnualScalar/nc/SOx-AnnualScalar.geos.1x1.nc           SOXscalar 1985-2008/1/1/0 xy unitless  1
+12 SOLFUEL_1985   /home/ckeller/data/emis/AnnualScalar/nc/SOx-AnnualScalar.geos.1x1.nc           SOXscalar 1985/1/1/0      xy unitless -1
+13 SOLFUEL_1999   /home/ckeller/data/emis/AnnualScalar/nc/SOx-AnnualScalar.geos.1x1.nc           SOXscalar 1999/1/1/0      xy unitless -1
+14 SOLFUEL_2006   /home/ckeller/data/emis/AnnualScalar/nc/SOx-AnnualScalar.geos.1x1.nc           SOXscalar 2006/1/1/0      xy unitless -1
+15 SOLFUEL_2002   /home/ckeller/data/emis/AnnualScalar/nc/SOx-AnnualScalar.geos.1x1.nc           SOXscalar 2002/1/1/0      xy unitless -1
+
+# --- day-of-week scale factors ---
+# ==> data is Sun/Mon/.../Sat 
+20 GEIA_DOW_NOX 0.784/1.0706/1.0706/1.0706/1.0706/1.0706/0.863 - - xy unitless 1
+21 GEIA_DOW_CO  0.683/1.1076/1.0706/1.0706/1.0706/1.0706/0.779 - - xy unitless 1
+22 GEIA_DOW_HC  0.671/1.1102/1.1102/1.1102/1.1102/1.1102/0.768 - - xy unitless 1 
+
+# --- diurnal scale factors --- 
+25 EDGAR_TODNOX /home/ckeller/data/emis/EDGAR/nc/EDGAR_hourly_NOxScal.nc NOXscale 2000/1/1/* xy unitless 1
+26 GEIA_TOD_FOSSIL 0.45/0.45/0.6/0.6/0.6/0.6/1.45/1.45/1.45/1.45/1.4/1.4/1.4/1.4/1.45/1.45/1.45/1.45/0.65/0.65/0.65/0.65/0.45/0.45 - - xy unitless 1
+
+# --- seasonal scale factors ---
+# from GEIA:
+30 GEIA_SEASON_NOX  /home/ckeller/data/emis/GEIA/nc/GEIA_monthscal.generic.1x1.nc NOXrat 1985/1-12/1/0 xy unitless 1
+31 GEIA_SEASON_SO2  /home/ckeller/data/emis/GEIA/nc/GEIA_monthscal.generic.1x1.nc SO2rat 1985/1-12/1/0 xy unitless 1
+# from EMEP:
+32 EMEP_SEASON_NOX /home/ckeller/data/emis/EMEP/nc/EMEP.Seasonal.geos.1x1.nc NOXrat 2005/1-12/1/0 xy unitless 1
+33 EMEP_SEASON_CO  /home/ckeller/data/emis/EMEP/nc/EMEP.Seasonal.geos.1x1.nc COrat  2005/1-12/1/0 xy unitless 1
+34 EMEP_SEASON_NH3 /home/ckeller/data/emis/EMEP/nc/EMEP.Seasonal.geos.1x1.nc NH3rat 2005/1-12/1/0 xy unitless 1
+35 EMEP_SEASON_SO2 /home/ckeller/data/emis/EMEP/nc/EMEP.Seasonal.geos.1x1.nc SO2rat 2005/1-12/1/0 xy unitless 1
+# from Streets:
+36 ZHANG_SEASON_NOX /home/ckeller/data/emis/STREETS/nc/2006/Streets_2004_NOx_MonthFctr_total.generic.1x1.nc NOxrat 2004/1-12/1/0 xy unitless 1
+37 ZHANG_SEASON_CO  /home/ckeller/data/emis/STREETS/nc/2006/Streets_2001_CO_MonthFctr_total.generic.1x1.nc  ratio  2001/1-12/1/0 xy unitless 1 
+# for Bromocarbons:
+38 BROMOCARB_SEASON /home/ckeller/data/emis/BROMINE/BromoCarb_Season.nc CHXBRY_scale 2000/1-12/1/0 xy unitless 1
+
+# --- VOC speciations ---
+50 RETRO_KET2MEK    0.25  - - xy unitless 1
+51 RETRO_KET2ACET   0.75  - - xy unitless 1
+52 COPROD_FOSSIL    1.02  - - xy unitless 1
+53 COPROD_BIOFUEL   1.086 - - xy unitless 1
+54 COPROD_BIOMASS   1.05  - - xy unitless 1
+55 ACETSCAL_FOSSIL  0.82  - - xy unitless 1
+56 ACETSCAL_BIOFUEL 0.82  - - xy unitless 1
+
+# --- SOx to SO2 conversion (Chin et al.) ---
+60 SOX2SO2_GLOBAL 0.986 - - xy unitless 1
+61 SOX2SO2_EU     0.95  - - xy unitless 1
+62 SULFUR2SOX     2.0   - - xy unitless 1
+
+# --- Hydrophilic and hydrophobic fractions of BC/OC --- 
+70 HYDROPHIL_BC 0.2 - - xy unitless 1
+71 HYDROPHOB_BC 0.8 - - xy unitless 1
+72 HYDROPHIL_OC 0.5 - - xy unitless 1
+73 HYDROPHOB_OC 0.5 - - xy unitless 1
+
+# --- AEIC aircraft emissions ---
+# ==> These are the real base emissions for AEIC. However, they are treated here as
+#     scale factors as they are used for multiple species. Note that these files
+#     must have the correct unit (kg/m2/s)!!
+81 AEICscal_NO /home/ckeller/data/emis/AEIC/aeic_2005.geos.4x5.nc NO       2005/1-12/1/0 xyz kg/m2/s 1
+82 AEICscal_CO /home/ckeller/data/emis/AEIC/aeic_2005.geos.4x5.nc CO       2005/1-12/1/0 xyz kg/m2/s 1
+83 AEICscal_FB /home/ckeller/data/emis/AEIC/aeic_2005.geos.4x5.nc FUELBURN 2005/1-12/1/0 xyz kg/m2/s 1
+84 AEICscal_HC /home/ckeller/data/emis/AEIC/aeic_2005.geos.4x5.nc HC       2005/1-12/1/0 xyz kg/m2/s 1
+# AEIC conversion factors
+101 AEICACET 3.693477e-3 - -  xy unitless 1
+102 AEICALD2 4.271822e-2 - -  xy unitless 1
+103 AEICALK4 2.137911e-1 - -  xy unitless 1
+104 AEICC2H6 5.214505e-3 - -  xy unitless 1
+105 AEICC3H8 7.808710e-4 - -  xy unitless 1
+106 AEICCH2O 1.230811e-1 - -  xy unitless 1
+107 AEICPRPE 1.780418e-1 - -  xy unitless 1
+108 AEICMACR 5.362609e-2 - -  xy unitless 1
+109 AEICRCHO 3.676944e-2 - -  xy unitless 1
+
+# --- GFED3 scale factors --- 
+121 GFED3_MONTHLY_AGW /home/ckeller/data/emis/GFED3/GFED3_monthly.nc GFED3_BB__AGW_DM 1997-2011/1-12/01/0 xy kg/m2/s 1
+122 GFED3_MONTHLY_DEF /home/ckeller/data/emis/GFED3/GFED3_monthly.nc GFED3_BB__DEF_DM 1997-2011/1-12/01/0 xy kg/m2/s 1
+123 GFED3_MONTHLY_FOR /home/ckeller/data/emis/GFED3/GFED3_monthly.nc GFED3_BB__FOR_DM 1997-2011/1-12/01/0 xy kg/m2/s 1
+124 GFED3_MONTHLY_PET /home/ckeller/data/emis/GFED3/GFED3_monthly.nc GFED3_BB__PET_DM 1997-2011/1-12/01/0 xy kg/m2/s 1
+125 GFED3_MONTHLY_SAV /home/ckeller/data/emis/GFED3/GFED3_monthly.nc GFED3_BB__SAV_DM 1997-2011/1-12/01/0 xy kg/m2/s 1
+126 GFED3_MONTHLY_WDL /home/ckeller/data/emis/GFED3/GFED3_monthly.nc GFED3_BB__WDL_DM 1997-2011/1-12/01/0 xy kg/m2/s 1
+128 GFED3_FRAC_DAY /home/ckeller/data/emis/GFED3/GFED3_frac_daily.nc GFED3_BB__DAYFRAC 2002-2011/1-12/1-31/0 xy unitless 1
+129 GFED3_FRAC_3HOUR /home/ckeller/data/emis/GFED3/GFED3_frac_3hourly.nc GFED3_BB__HRFRAC 2002-2011/1-12/01/* xy unitless 1
+
+#
+END SECTION SCALE FACTORS 
+
+####################################################################################
+BEGIN SECTION MASKS 
+####################################################################################
+#
+# ScalID Name sourceFile sourceVar sourceTime SrcDim SrcUnit Oper Lon1/Lat1/Lon2/Lat2
+#
+# Country/region masks
+1000 EMEP_MASK   /home/ckeller/data/emis/MASKS/nc/EMEP_mask.geos.1x1.nc           MASK */*/*/* xy unitless 1 -30/30/45/70
+1001 MEXICO_MASK /home/ckeller/data/emis/MASKS/nc/BRAVO.MexicoMask.generic.1x1.nc MASK */*/*/* xy unitless 1 -118/17/-95/33
+1002 CANADA_MASK /home/ckeller/data/emis/MASKS/nc/Canada_mask.geos.1x1.nc         MASK */*/*/* xy unitless 1 -141/40/-52/85
+1003 SEASIA_MASK /home/ckeller/data/emis/MASKS/nc/SE_Asia_mask.generic.1x1.nc     MASK */*/*/* xy unitless 1  60/-12/153/55
+1004 NA_MASK     /home/ckeller/data/emis/MASKS/nc/NA_mask.geos.1x1.nc             MASK */*/*/* xy unitless 1 -165/10/-40/90
+
+# Biome masks
+1010 HUMTROP_FOREST_MASK /home/ckeller/data/emis/GFED3/GFED3_humtropmap.nc humtrop 2000/1/1/0 xy unitless 1 -180/-90/180/90
+1011 HUMTROP_FOREST_MIRROR /home/ckeller/data/emis/GFED3/GFED3_humtropmap.nc humtrop 2000/1/1/0 xy unitless 3 -180/-90/180/90
+#
+END SECTION MASKS 
+
+####################################################################################
+BEGIN SECTION EXTENSION SWITCHES
+####################################################################################
+# Make sure that the ExtNr provided here matches with the ExtNr provided in the base 
+# emissions sections. Otherwise, the listed files won't be read!
+#
+# ExtNr ExtName           on/off  Species 
+100     Custom            : off   - 
+101     SeaFlux           : on    CH3I/DMS/ACET 
+102     ParaNOx           : on    NO/NO2/O3/HNO3
+103     LightNOx          : on    NO
+    --> CDF table         :       /home/ckeller/data/emis/LIGHTNOX/light_dist.ott2010.dat
+104     SoilNOx           : on    NO 
+    --> Use fertilizer NOx:       true
+105     DustDead          : on    DST1/DST2/DST3/DST4 
+106     DustGinoux        : off   DST1/DST2/DST3/DST4
+107     SeaSalt           : on    SALA/SALC/Br2
+    --> SALA lower radius :       0.01 
+    --> SALA upper radius :       0.5
+    --> SALC lower radius :       0.5
+    --> SALC upper radius :       8.0
+    --> Emit Br2          :       true
+    --> Br2 scaling       :       1.0 
+108     MEGAN             : on    ISOP/ACET/PRPE/C2H4
+    --> Isoprene scaling  :       1.0 
+    --> PECCA model       :       true
+109     MEGAN_Mono        : on    MONX/OCPI/CO
+110     MEGAN_SOA         : off   ALPH/LIMO/ALCO
+#
+END SECTION EXTENSION SWITCHES 
+
+####################################################################################
+BEGIN SECTION EXTENSION DATA
+####################################################################################
+#
+# --- Seawater concentrations for oceanic emissions (Extension 101) ---
+101 CH3I_SEAWATER   /home/ckeller/data/emis/CH3I/nc/ocean_ch3i.kgm-3.geos.4x5.nc       CH3I  1985/1-12/1/0 xy kg/m3 CH3I - 1 1
+101 DMS_SEAWATER    /home/ckeller/data/emis/DMS/nc/DMS_seawater.geos.4x5.nc      DMS   1985/1-12/1/0 xy nmol/L DMS  - 1 1
+101 ACET_SEAWATER   /home/ckeller/data/emis/ACET/nc/ACET_seawater.generic.1x1.nc ACET  2005/1/1/0    xy nmol/L ACET - 1 1 
+#
+# --- PARANOX emissions (Extension 102) ---
+# List here NO ship emissions only. Ship NO emissions will be assembled from all 
+# inventories listed below based upon the assigned hierarchies.
+102 ICOADS_SHIP_NO  /home/ckeller/data/emis/ICOADS_SHIP/nc/ICOADS_ship.geos.1x1.nc    NO       2002/1-12/1/0   xy kg/m2/s NO  1/5  1 1
+102 EDGAR_SHIP_NO   /home/ckeller/data/emis/EDGAR/nc/EDGAR.generic.1x1.nc          NO.f5800 2000/1/1/0      xy kg/m2/s NO  1/30 1 2
+102 EMEP_SHIP_NO    /home/ckeller/data/emis/EMEP/nc/EMEP.update.geos.1x1.nc        shipNO   1990-2007/1/1/0 xy kg/m2/s NO  1000 1 10
+#
+# --- LIGHTNOX emissions (Extension 103) ---
+# Local redistribution factors: These are model-specific and hence need to be redefined for different model/resolution simulations!!!
+103 LIGHTNOX_REDIST /home/ckeller/data/emis/LIGHTNOX/nc/OTD-LIS-Local-Redist.CTH.v5.geos5.4x5.nc OTD_LOC 2007-2009/1-12/1/0 xy unitless NO - 1 1
+#
+# --- SOILNOX emissions (Extension 104) ---
+104 SOILNOX_PFACT   /home/ckeller/data/emis/SOILNOX/soilNOx.restart.geos.4x5.nc         PFACTOR      YYYY/MM/DD/HH    xy  unitless NO - 1 1
+104 SOILNOX_DRYPER  /home/ckeller/data/emis/SOILNOX/soilNOx.restart.geos.4x5.nc         DRYPERIOD    YYYY/MM/DD/HH    xy  unitless NO - 1 1
+104 SOILNOX_GWET    /home/ckeller/data/emis/SOILNOX/soilNOx.restart.geos.4x5.nc         GWET_PREV    YYYY/MM/DD/HH    xy  unitless NO - 1 1
+104 SOILNOX_DEPRES  /home/ckeller/data/emis/SOILNOX/soilNOx.restart.geos.4x5.nc        DEP_RESERVOIR YYYY/MM/DD/HH    xy  ngN/m2   NO - 1 1
+104 SOILNOX_FERT    /home/ckeller/data/emis/SOILNOX/soilNOx.fert_res.generic.05x05.nc   FERT         2000/1-12/1-31/0 xy  ngN/m2   NO - 1 1
+104 SOILNOX_LANDK1  /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K01 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK2  /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K02 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK3  /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K03 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK4  /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K04 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK5  /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K05 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK6  /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K06 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK7  /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K07 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK8  /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K08 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK9  /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K09 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK10 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K10 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK11 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K11 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK12 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K12 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK13 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K13 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK14 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K14 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK15 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K15 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK16 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K16 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK17 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K17 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK18 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K18 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK19 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K19 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK20 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K20 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK21 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K21 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK22 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K22 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK23 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K23 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_LANDK24 /home/ckeller/data/emis/SOILNOX/soilNOx.landtype.generic.025x025.nc LANDFRAC_K24 2000/1/1/0       xyz unitless NO - 1 1
+104 SOILNOX_ARID    /home/ckeller/data/emis/SOILNOX/soilNOx.climate.generic.05x05.nc    ARID         2000/1/1/0       xy unitless NO - 1 1
+104 SOILNOX_NONARID /home/ckeller/data/emis/SOILNOX/soilNOx.climate.generic.05x05.nc    NON_ARID     2000/1/1/0       xy unitless NO - 1 1
+#
+# --- dust emissions using DEAD model (Extension 105) ---
+105 DEAD_EF_GEO   /home/ckeller/data/emis/DUST_DEAD/nc/dst_tibds.geos.4x5.nc     EF_GEO   1985/1/1/0    xy factor   * - 1 1
+105 DEAD_LF_DRY   /home/ckeller/data/emis/DUST_DEAD/nc/dst_tibds.geos.4x5.nc     LF_DRY   1985/1/1/0    xy factor   * - 1 1
+105 DEAD_MF_CACO3 /home/ckeller/data/emis/DUST_DEAD/nc/dst_tibds.geos.4x5.nc     MF_CaCO3 1985/1/1/0    xy fraction * - 1 1
+105 DEAD_MF_CLY   /home/ckeller/data/emis/DUST_DEAD/nc/dst_tibds.geos.4x5.nc     MF_CLY   1985/1/1/0    xy fraction * - 1 1
+105 DEAD_MF_SND   /home/ckeller/data/emis/DUST_DEAD/nc/dst_tibds.geos.4x5.nc     MF_SND   1985/1/1/0    xy fraction * - 1 1
+105 DEAD_SFC_TYP  /home/ckeller/data/emis/DUST_DEAD/nc/dst_tibds.geos.4x5.nc     SFC_TYP  1985/1/1/0    xy unitless * - 1 1
+105 DEAD_GOC_SRC  /home/ckeller/data/emis/DUST_DEAD/nc/GOCART_src_fn.geos.4x5.nc GOC_SRC  1985/1/1/0    xy unitless * - 1 1
+105 DEAD_VAI      /home/ckeller/data/emis/DUST_DEAD/nc/dst_tvbds.geos.4x5.nc     VAI      1985/1-12/1/0 xy unitless * - 1 1
+#
+# --- Dust emissions using Paul Ginoux's mechanism (Extension 106) 
+106 GINOUX_SAND   /home/ckeller/data/emis/DUST_GINOUX/nc/NSP.dust.geos.4x5.nc  SAND  1985/1/1/0 xy unitless * - 1 1 
+106 GINOUX_SILT   /home/ckeller/data/emis/DUST_GINOUX/nc/NSP.dust.geos.4x5.nc  SILT  1985/1/1/0 xy unitless * - 1 1 
+106 GINOUX_CLAY   /home/ckeller/data/emis/DUST_GINOUX/nc/NSP.dust.geos.4x5.nc  CLAY  1985/1/1/0 xy unitless * - 1 1 
+#
+# --- Sea salt emissions (Extension 107) 
+# --- No external data --- 
+#
+# --- MEGAN biogenic emissions (Extension 108)
+# NOTE: These are the base emissions, which will be converted to kgC/m2/s by HEMCO. The specified species (OCPI/ISOP/ACET) are required
+#       for proper unit conversion. Since netCDF files are already in mass carbon (ug(C)), the only important thing is to specify a VOC
+#       with a specified MW of 12g/mol. This is the case for OCPI, ISOP and ACET.
+108 MEGAN_AEF_ISOP  /home/ckeller/data/emis/MEGAN/nc/MEGANv2.1_AEF.geos.1x1.nc AEF_ISOPRENE      1985/1/1/0    xy kgC/m2/s ISOP - 1 1
+108 MEGAN_AEF_ACET  /home/ckeller/data/emis/MEGAN/nc/MEGANv2.1_AEF.geos.1x1.nc AEF_ACETONE       1985/1/1/0    xy kgC/m2/s ACET - 1 1 
+109 MEGAN_AEF_MONOT /home/ckeller/data/emis/MEGAN/nc/MEGANv2.1_AEF.geos.1x1.nc AEF_MONOTERPENES  1985/1/1/0    xy kgC/m2/s ISOP - 1 1
+109 MEGAN_AEF_MBO   /home/ckeller/data/emis/MEGAN/nc/MEGANv2.1_AEF.geos.1x1.nc AEF_MBO           1985/1/1/0    xy kgC/m2/s ISOP - 1 1
+109 MEGAN_AEF_APINE /home/ckeller/data/emis/MEGAN/nc/MEGANv2.1_AEF.geos.1x1.nc AEF_ALPHA_PINENE  1985/1/1/0    xy kgC/m2/s ISOP - 1 1
+109 MEGAN_AEF_BPINE /home/ckeller/data/emis/MEGAN/nc/MEGANv2.1_AEF.geos.1x1.nc AEF_BETA_PINENE   1985/1/1/0    xy kgC/m2/s ISOP - 1 1
+109 MEGAN_AEF_LIMON /home/ckeller/data/emis/MEGAN/nc/MEGANv2.1_AEF.geos.1x1.nc AEF_LIMONENE      1985/1/1/0    xy kgC/m2/s ISOP - 1 1
+109 MEGAN_AEF_SABIN /home/ckeller/data/emis/MEGAN/nc/MEGANv2.1_AEF.geos.1x1.nc AEF_SABINENE      1985/1/1/0    xy kgC/m2/s ISOP - 1 1
+109 MEGAN_AEF_MYRCN /home/ckeller/data/emis/MEGAN/nc/MEGANv2.1_AEF.geos.1x1.nc AEF_MYRCENE       1985/1/1/0    xy kgC/m2/s ISOP - 1 1
+109 MEGAN_AEF_CAREN /home/ckeller/data/emis/MEGAN/nc/MEGANv2.1_AEF.geos.1x1.nc AEF_CARENE        1985/1/1/0    xy kgC/m2/s ISOP - 1 1
+109 MEGAN_AEF_OCIMN /home/ckeller/data/emis/MEGAN/nc/MEGANv2.1_AEF.geos.1x1.nc AEF_OCIMENE       1985/1/1/0    xy kgC/m2/s ISOP - 1 1
+110 MEGAN_ORVC      /home/ckeller/data/emis/SOA/nc/NVOC.geos.1x1.nc            OCPI              1990/1-12/1/0 xy kgC/m2/s OCPI - 1 1
+#
+END SECTION EXTENSION DATA
+ 
+### END OF HEMCO INPUT FILE ###

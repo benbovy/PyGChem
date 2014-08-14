@@ -2,7 +2,7 @@
 
 # parts of pygchem (Python interface for GEOS-Chem Chemistry Transport Model)
 #
-# Copyright (C) 2013-2014 Christoff Keller, Benoît Bovy
+# Copyright (C) 2013-2014 Christoph Keller, Benoît Bovy
 # see license.txt for more details
 #
 

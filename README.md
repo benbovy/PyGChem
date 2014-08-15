@@ -1,68 +1,22 @@
 PyGChem
 =======
 
-'PyGCHem' is a high-level, user-friendly Python interface to the 
+PyGCHem is a high-level, user-friendly Python interface to the 
 GEOS-Chem Model, a global 3-D chemical transport model (CTM)
 for atmospheric composition.
 
-The project is currently at an early stage of development. 
-This version is already usable (alpha stage), although many features still have
-to be implemented. The first release will provide:
--   An object oriented library and a collection of routines (Python package)
-    for model setup and parameterization (e.g., the global chemistry 
-    mechanism), for I/O operations, and for processing/plotting outputs
-    from the model ;
--   A collection of scripts, based on the library, to achieve common tasks
-    related to GEOS-Chem simulations ;
--   Several GUI elements (Qt widgets) for common visualizations and
-    animations ;
--   A customized GEOS-Chem Shell (using IPython) to setup/run 
-    simulations and perform post-processing/plotting tasks.
+(The project is currently in development). 
 
-
-Dependencies
-------------
-
-Requirements:
--   Python 2.7 or higher (not 3.x)
--   Numpy 1.5 or higher
--   Matplotlib 1.0 or higher
--   Basemap extension for matplotlib
--   FortranFormat (will be included in the project)
-
-Optional modules (Widgets, Shell...):
--   IPython
--   PySide (PyQt4 not supported yet)
--   NetworkX
-
-We highly recommend the installation of a scientific python distribution:
--   Python XY (Windows): <http://code.google.com/p/pythonxy/>
--   Enthought Canopy or EPD (Multi-platform, free academic license): 
-    <https://www.enthought.com/>
-
-
-Installation
-------------
-
--   Download the code from github as zip archive [1], unzip and cd into
-    the new directory [2]
--   Run 'python setup.py install' to install 'PyGChem'.
-  
-
-[1] <https://github.com/benbovy/PyGChem> 
-[2] You can also use the 'git' software with the following command:
-    ```git clone https://github.com/benbovy/PyGChem.git```
+The GEOS-Chem's website: <http://acmg.seas.harvard.edu/geos/>
 
 
 Documentation
 -------------
 
-Full documentation with examples and illustrations is not available yet,
-but Python classes and routines are well documented in the code (docstrings).
+The documentation is currently available as [IPython notebooks]
+(http://nbviewer.org/github/benbovy/PyGChem/blob/master/examples/notebooks/Index.ipynb)
 
-Basic Examples can be found in the "pygchem/tests" folder (files with the
-'example_' prefix).
-Small Python applications (widgets) can be found in the "apps" folder. 
+The complete reference documentation will be available soon.
 
 
 License
@@ -70,8 +24,7 @@ License
 
 Copyright (C) 2013 Benoît Bovy
 
-Parts of the code are taken from the 'gchem' project 
-<https://github.com/gkuhl/gchem/> Copyright (C) 2012 Gerrit Kuhlmann.
+(contributions from Gerrit Kuhlmann and Christoph Keller).
 
 Licensed under the terms of the GPL License v3.
 See LICENSE.txt for more information.
@@ -86,5 +39,3 @@ Affiliation:
 GIRPAS - Department of Astrophysics, Geophysics and Oceanography
 University of Liège (Belgium)
 <http://girpas.astro.ulg.ac.be/>
-
-

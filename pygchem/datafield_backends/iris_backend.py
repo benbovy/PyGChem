@@ -359,13 +359,22 @@ load_field = iris.load_cube
 load_fields = iris.load_cubes
 load_raw = iris.load_raw
 
+load_callbacks = {
+    'gamap_bpch2nc': fix_bpch2nc,
+    'gamap_bpch2coards': fix_bpch2coards
+}
+
 save = iris.save
 
 # TODO: an alternative way to link CTM metadata, other than cube attributes ?
 #   - cube attributes may +- slow the cube creation and concatenation
 #   - CTM metadata related to the geometry, useful because of the metadata
 #     format but duplicates the information in the cube
+#
 #   - possible solution: subclass Cube and CubeList, add specific properties
 #     that link the cube to Diagnostic object and other metadata
 #     (e.g. 'loaded_from_file', 'save_to_file'), and all functions / methods
 #     returning new cube / cubelist overridden to return the subclass
+#
+#   - other solution: 'monkey' attributes 'diagnostic', 'bpch_metadata'
+#                     plus overriding the copy method of the cube?

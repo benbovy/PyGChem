@@ -27,4 +27,7 @@ load = _dbackend.load
 load_field = _dbackend.load_field
 load_fields = _dbackend.load_fields
 load_raw = _dbackend.load_raw
+
+load_callbacks = _dbackend.load_callbacks
+
 save = _dbackend.save

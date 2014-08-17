@@ -18,7 +18,7 @@ Code written by Gerrit Kuhlmann is also included in this package.
 """
 
 __all__ = ["config", "globchem", "grid", "diagnostics", "io", "tools",
-           "utils",]
+           "utils"]
 __version__ = '0.3.0dev'
 __license__ = __doc__
 __project_url__ = 'https://github.com/benbovy/PyGChem'

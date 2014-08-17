@@ -107,14 +107,15 @@ def get_cfcompliant_units(units, prefix='', suffix=''):
 VARNAME_MAP_CHAR = (
     ('$', 'S'),
     (':', '_'),
-    ('=', '_')
+    ('=', '_'),
+    ('-', '_'),
 )
 
 
 def get_valid_varname(varname):
     """
-    Replace characters (e.g., ':', '$', '=') of a variable name, which
-    may cause problems when using it (CF-)netCDF based packages.
+    Replace characters (e.g., ':', '$', '=', '-') of a variable name, which
+    may cause problems when using with (CF-)netCDF based packages.
 
     Parameters
     ----------

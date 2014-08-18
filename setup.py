@@ -18,10 +18,11 @@ def get_package_data(name, extlist):
     offset = len(name) + len(os.pathsep)
     for dirpath, _dirnames, filenames in os.walk(name):
         for fname in filenames:
-            if (not fname.startswith('.')
-                and '.*' not in extlist
-                and os.path.splitext(fname)[1] in extlist):
-                flist.append(os.path.join(dirpath, fname)[offset:])
+            #if (not fname.startswith('.')
+            #    and '.*' not in extlist
+            #    and os.path.splitext(fname)[1] in extlist):
+            #    flist.append(os.path.join(dirpath, fname)[offset:])
+            flist.append(os.path.join(dirpath, fname)[offset:])
     print "Data files to install: %s" % ", ".join(flist)
     return flist
 

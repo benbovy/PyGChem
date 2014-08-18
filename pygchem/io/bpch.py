@@ -122,7 +122,7 @@ def read_bpch(filename, mode='rb', skip_data=True,
         raise ValueError("write-only mode is not allowed for reading the "
                          "bpch file")
 
-    dir_path = os.path.dirname(filename)
+    dir_path = os.path.abspath(os.path.dirname(filename))
     if not dir_path:
         dir_path = os.getcwd()
     if not tracerinfo_file:

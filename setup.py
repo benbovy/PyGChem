@@ -59,9 +59,13 @@ setup(
     url=__project_url__,
     download_url='%s/archive/%s.tar.gz' % (__project_url__, __version__),
     platforms=['any'],
+    include_package_data=True,
     packages=get_packages(),
-    package_data={LIBNAME: get_package_data(os.path.join(LIBNAME, DATA_DIR),
-                                            ('.*'))},
+    package_dir={LIBNAME: LIBNAME},
+    package_data={LIBNAME: [os.path.join(DATA_DIR, '*.dat')]},
+    #package_data={LIBNAME: get_package_data(os.path.join(LIBNAME, DATA_DIR),
+    #                                        ('.*',))},
+    #data_files=[('', ['LIBNAME/data/*.dat'])],
     scripts=[],
     requires=["numpy (>= 1.7.0)"]
 )

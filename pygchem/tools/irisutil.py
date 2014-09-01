@@ -18,6 +18,7 @@ from types import StringTypes
 import numpy as np
 import biggus
 import iris
+import iris.std_names
 import iris.coords
 import iris.exceptions
 import iris.util
@@ -198,10 +199,25 @@ def _datablock_to_cube(datablock, dim_coords_and_dims=None,
         data = datablock['data']
     cube = iris.cube.Cube(data)
 
-    # set the cube's name ('name_category')
+    # units
+    units = datablock['unit'].strip()
+    # Try to get equivalent units compatible with udunits.
+    # Store original unit as cube attribute
+    conform_units = ctm2cf.get_cfcompliant_units(units)
+    try:
+        cube.units = conform_units
+    except ValueError:
+        warnings.warn("Invalid udunits2 '{0}'".format(units))
+    cube.attributes["ctm_units"] = units
+
+    # set the cube's name ('category__name')
     name = "__".join([datablock['category'], datablock['name']])
     name = ctm2cf.get_valid_varname(name)
-    cube.rename(name)
+    # a hack for keeping cube's long_name but show var_name in cube summary
+    iris.std_names.STD_NAMES[name] = {'canonical_units': cube.units}
+    cube.standard_name = name
+    cube.var_name = name
+    cube.long_name = datablock['tracerinfo'].get('full_name')
 
     # set coordinates from datablock metadata
     if coords_from_model:
@@ -238,29 +254,19 @@ def _datablock_to_cube(datablock, dim_coords_and_dims=None,
                                       units=CTM_TIME_UNIT_IRIS)
     cube.add_aux_coord(time_coord)
 
-    # units
-    units = datablock['unit'].strip()
-    try:
-        cube.units = units
-    except ValueError:
-        # Try to get equivalent units compatible with udunits.
-        # Store original unit as cube attribute
-        conform_units = ctm2cf.get_cfcompliant_units(units)
-        try:
-            cube.units = conform_units
-        except ValueError:
-            warnings.warn("Invalid udunits2 '{0}'".format(units))
-    cube.attributes["ctm_units"] = units
-
     # attributes
-    if isinstance(datablock['tracerinfo'], dict):
-        cube.attributes.update(datablock['tracerinfo'])
-        cube.attributes.pop('unit')
-    # concatenate cubes from multiple bpch files doesn't work with
-    # the attributes 'loaded_from_file', 'save_to_file'
-    # TODO: find a better alternative than discarding theses attributes
-    for attr_name in ('name', 'number', 'category', 'modelname', 'resolution'):
-        cube.attributes[attr_name] = datablock.get(attr_name, None)
+    # TODO: proper attribute handling (several issues)
+    # 1. avoid duplicating the space domain information
+    # 2. keep somewhere the metadata in its original format (for further export)
+    # 3. deal with simple types only (e.g., tuple not valid as cube attribute)
+    # 4. limit the number of cube attributes (slows down the cube merging)
+    cube.attributes['model'] = datablock.get('modelname')
+
+    #if isinstance(datablock['tracerinfo'], dict):
+    #    cube.attributes.update(datablock['tracerinfo'])
+    #    cube.attributes.pop('unit')
+    #for attr_name in ('name', 'number', 'category', 'modelname', 'resolution'):
+    #    cube.attributes[attr_name] = datablock.get(attr_name, None)
     cube.attributes.update(kwargs)
 
     return cube

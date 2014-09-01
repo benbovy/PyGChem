@@ -162,8 +162,8 @@ def read_bpch(filename, mode='rb', skip_data=True,
                     unit = diag_attr['unit']    # but not in tracerinfo
             except exceptions.SelectionMismatchError:
                 diag = {'name': '', 'scale': 1}
-                diag_attr = 'no additional metadata found for tracer/diagnostic'
-                cat_attr = 'no metadata found for diagnostic category'
+                diag_attr = {}
+                cat_attr = {}
 
             # parse metadata, get data or set a data proxy
             if dim2 == 1:

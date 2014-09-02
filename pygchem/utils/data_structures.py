@@ -388,20 +388,30 @@ class RecordList(UserList):
         raise exceptions.NotPermittedError('duplicating items is not allowed')
 
     def __str__(self):
-        # TODO: only show the keys?
-        return "List of {0} {1}{2}:\n{3}" \
-            .format(len(self), self._get_ref_classes_names(),
-                    ' (selection)' if self._selection_ref is not None else '',
-                    '\n'.join(str(obj) for obj in self.data))
+        header = "List of {0} {1}{2}:".format(
+            len(self),
+            self._get_ref_classes_names(),
+            ' (selection)' if self._selection_ref is not None else ''
+        )
+        items = ["{0}: {1}".format(n, i) for n, i in enumerate(self.data)]
+        return header + "\n" + "\n".join(items)
 
     def __repr__(self):
-        # TODO: only show the keys?
-        return "<{0}{1}: {2}>"\
-            .format(self.__class__.__name__,
-                    ' (selection)' if self._selection_ref is not None else '',
-                    super(RecordList, self).__repr__())
+        if len(self) > 8:
+            keys_str = str(self.keys[0:8])[:-1] + '...]'
+        else:
+            keys_str = str(self.keys)
+        return "<{cls}({n}{sel} {itemcls}, keys={k})>".format(
+            cls=self.__class__.__name__, n=len(self),
+            sel=' selected' if self._selection_ref is not None else '',
+            itemcls=self._get_ref_classes_names(), k=keys_str)
 
-    # TODO: __html__ representation
+    def __html__(self):
+        # TODO: html representation of record list
+        pass
+        #return "<table><tr><td>{0}</td></tr></table>".format(
+        #    self.__class__.__name__
+        #)
 
 
 class Record(object):
@@ -478,8 +488,10 @@ class Record(object):
             setattr(self, k, v)
 
     def __repr__(self):
-        kv_pairs = zip(self._properties,
-                       (getattr(self, k) for k in self._properties))
+        vals = [getattr(self, k) for k in self._properties]
+        vals2 = [v if not isinstance(v, RecordList) else repr(v)
+                 for v in vals]
+        kv_pairs = zip(self._properties, vals2)
         kv_repr = ', '.join("{0}={1}".format(k, v) for k, v in kv_pairs)
         return "({0})".format(kv_repr)
 

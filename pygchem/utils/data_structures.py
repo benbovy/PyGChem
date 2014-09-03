@@ -14,6 +14,7 @@ Custom, generic data structures.
 import sys
 import os
 import collections
+import cgi
 from textwrap import dedent
 from keyword import iskeyword
 from collections import OrderedDict
@@ -108,7 +109,8 @@ class RecordList(UserList):
 
     def _create_selection(self, sel_objects):
         cls = self.__class__
-        selection = cls(sel_objects, key_attr=self.key_attr)
+        selection = cls(sel_objects, key_attr=self.key_attr,
+                        ref_classes=self.ref_classes)
         if self._selection_ref is None:
             selection._selection_ref = self
         else:
@@ -387,18 +389,28 @@ class RecordList(UserList):
     def __imul__(self, other):
         raise exceptions.NotPermittedError('duplicating items is not allowed')
 
-    def __str__(self):
-        header = "List of {0} {1}{2}:".format(
+    def _repr_header_items(self):
+        header = "Record list of {0}{1} {2}:".format(
             len(self),
-            self._get_ref_classes_names(),
-            ' (selection)' if self._selection_ref is not None else ''
+            ' selected' if self._selection_ref is not None else '',
+            self._get_ref_classes_names()
         )
-        items = ["{0}: {1}".format(n, i) for n, i in enumerate(self.data)]
-        return header + "\n" + "\n".join(items)
+        items = [(str(n), str(getattr(i, self.key_attr)), str(i))
+                 for n, i in enumerate(self.data)]
+        if len(items) > 52:
+            items = items[0:51] + [('...', '...', '...')] + [items[-1]]
+        return header, items
+
+    def __str__(self):
+        header, items = self._repr_header_items()
+        return header + "\n" + "\n".join("{0} | {1}: {2}".format(*i)
+                                         for i in items)
 
     def __repr__(self):
         if len(self) > 8:
-            keys_str = str(self.keys[0:8])[:-1] + '...]'
+            keys_str = str(self.keys[0:7])[:-1]
+            keys_str += ', ... , '
+            keys_str += str([self.keys[-1]])[1:]
         else:
             keys_str = str(self.keys)
         return "<{cls}({n}{sel} {itemcls}, keys={k})>".format(
@@ -406,12 +418,24 @@ class RecordList(UserList):
             sel=' selected' if self._selection_ref is not None else '',
             itemcls=self._get_ref_classes_names(), k=keys_str)
 
-    def __html__(self):
-        # TODO: html representation of record list
-        pass
-        #return "<table><tr><td>{0}</td></tr></table>".format(
-        #    self.__class__.__name__
-        #)
+    def _repr_html_(self):
+        # TODO: issue with Qt console and python 2.7 -> disable html rendering
+        # see the pandas source code
+        header, items = self._repr_header_items()
+        header_html = "<div>{0}</div>".format(header)
+        items_html = ''.join(
+            ("<tr>" +
+             ''.join(("<td>{0}</td>".format(cgi.escape(f)) for f in i)) +
+             "</tr>"
+             for i in items)
+        )
+        table_header = ''.join(
+            "<td style='font-weight:bold;'>{0}</td>".format(s)
+            for s in ['', 'Key', self._get_ref_classes_names()]
+        )
+        table_header = "<tr>" + table_header + "</tr>"
+        table_html = "<table>" + table_header + items_html + "</table>"
+        return header_html + table_html
 
 
 class Record(object):

@@ -129,7 +129,7 @@ EmissionExt = record_cls(
 # Re-define a few properties (for more complex objects or type combinations)
 #-----------------------------------------------------------------------------
 
-# TODO: (var_name, ndim, units) correspondence between record-type and datafield
+# TODO: (var_name, ndim, units) connection between record-type and datafield
 
 EmissionBase.scale_factors = property(
     lambda self: self._scale_factors,
@@ -284,7 +284,7 @@ class EmissionSetup(object):
         """
         bef = []
         for ext in self.extensions:
-            bef.extend(ext.base_emission_fields)
+            bef.extend(ext.base_emission_fields + ext.extension_data)
         return RecordList(bef, ref_classes=EmissionBase, read_only=True,
                           key_attr='name')
 
@@ -303,9 +303,19 @@ class EmissionSetup(object):
         sf = []
         for bef in self.base_emission_fields:
             sf.extend(bef.scale_factors)
-        # TODO: using 'set' doesn't preserve order, confusion with RecordList
-        # (order should matter)
-        return RecordList(set(sf), ref_classes=[EmissionScale, EmissionMask],
+        # can't using the 'set' python type to get a list of unique elements
+        # ('set' doesn't preserve the order)
+        sf_keys = [f.name for f in sf]
+        sf_duplicates = []
+        sf_unique = []
+        for i, k in enumerate(sf_keys):
+            if sf_keys.count(k) > 1:
+                if k in sf_duplicates:
+                    continue
+                sf_duplicates.append(k)
+            sf_unique.append(sf[i])
+
+        return RecordList(sf_unique, ref_classes=[EmissionScale, EmissionMask],
                           read_only=True, key_attr='name')
 
     def get_fids(self):
@@ -402,7 +412,7 @@ class EmissionSetup(object):
 
         # add Core extension if needed
         if not any([ext['eid'] == 0 for ext in extensions]):
-            extensions.append({'eid': 0, 'name': 'Core', 'enabled': True})
+            extensions.insert(0, {'eid': 0, 'name': 'Core', 'enabled': True})
 
         emission_scales = [EmissionScale(**sf) for sf in scale_factors]
         emission_masks = [EmissionMask(**m) for m in masks]

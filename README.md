@@ -1,7 +1,7 @@
 PyGChem
 =======
 
-PyGCHem is a high-level, user-friendly Python interface to the 
+PyGChem is a high-level, user-friendly Python interface to the 
 GEOS-Chem Model, a global 3-D chemical transport model (CTM)
 for atmospheric composition.
 

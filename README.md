@@ -22,7 +22,7 @@ The complete reference documentation will be available soon.
 License
 -------
 
-Copyright (C) 2013 Benoît Bovy
+Copyright (C) 2013-2014 Benoît Bovy
 
 (contributions from Gerrit Kuhlmann and Christoph Keller).
 

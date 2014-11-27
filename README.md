@@ -13,8 +13,8 @@ The GEOS-Chem's website: <http://acmg.seas.harvard.edu/geos/>
 Documentation
 -------------
 
-The documentation is currently available as [IPython notebooks]
-(http://nbviewer.org/github/benbovy/PyGChem/blob/master/examples/notebooks/Index.ipynb)
+Some IPython notebook-based documentation can be found [here]
+(http://nbviewer.org/github/benbovy/PyGChem_examples/blob/master/Index.ipynb)
 
 The complete reference documentation will be available soon.
 

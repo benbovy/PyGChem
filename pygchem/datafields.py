@@ -7,27 +7,87 @@
 #
 
 """
-Functions and classes for handling GEOS-Chem datasets.
+GEOS-Chem datasets I/O and manipulation using one of the available
+backends ('iris', 'netcdf', 'bpch').
 
 """
 
 import importlib
+from contextlib import contextmanager
 
 
 DEFAULT_BACKEND = 'iris'   # TODO: move this in the config module
 
-_dbackend = importlib.import_module("pygchem.datafield_backends.{0}_backend"
-                                    .format(DEFAULT_BACKEND))
 
-CTMField = _dbackend.CTMField
-Constraint = _dbackend.Constraint
-AttributeConstraint = _dbackend.AttributeConstraint
+_backends = {
+    # 'name': 'module'
+    'iris': 'iris_backend',
+    'netcdf': 'netcdf_backend',
+    'bpch': 'bpch_backend'
+}
 
-load = _dbackend.load
-load_field = _dbackend.load_field
-load_fields = _dbackend.load_fields
-load_raw = _dbackend.load_raw
+_current_backend = DEFAULT_BACKEND
 
-load_callbacks = _dbackend.load_callbacks
 
-save = _dbackend.save
+def _load_backend(backend_name):
+    global load, load_dataset, load_datasets, load_raw, load_callbacks, save
+    global _current_backend
+
+    backend_mod = _backends.get(backend_name)
+    backend = importlib.import_module("pygchem.datafield_backends.{0}"
+                                      .format(backend_mod))
+
+    load = backend.load
+    load_dataset = backend.load_dataset
+    load_datasets = backend.load_datasets
+    load_raw = backend.load_raw
+    load_callbacks = backend.load_callbacks
+    save = backend.save
+
+    _current_backend = backend_name
+
+
+def get_available_backends():
+    """
+    Return a list of all available backends for dataset handling.
+    """
+    return list(_backends.keys())
+
+
+@contextmanager
+def set_backend(backend_name, backend_options=None, failback=True):
+    """
+    Set the dataset handling backend to one of the known backends.
+
+    Parameters
+    ----------
+    backend_name : string
+        Name of the backend
+    backend_options : dict
+        Not working yet
+    failback : bool
+        Not working yet
+
+    See Also
+    --------
+    get_available_backends
+        List of all available backends.
+    """
+    global _current_backend
+
+    # TODO: allow to pass backend options
+
+    backend2restore = _current_backend
+    try:
+        # TODO: reload backend module if backend_name == _current_backend ?
+        _load_backend(backend_name)
+        _current_backend = backend_name
+        yield
+    except Exception as e:
+        # TODO: recursive call (try another backend) if failback is True
+        raise e
+    finally:
+        _load_backend(backend2restore)
+
+
+_load_backend(DEFAULT_BACKEND)

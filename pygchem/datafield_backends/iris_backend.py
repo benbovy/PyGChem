@@ -41,7 +41,7 @@ from pygchem.tools import irisutil, ctm2cf, timeutil
 
 # -----------------------------------------------------------------------------
 # BPCH Support for Iris
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 def cubes_from_bpch(filenames, callback=None, **kwargs):
     """
@@ -151,16 +151,16 @@ bpch_spec_le = fp.FormatSpecification(
     priority=6
 )
 iris.fileformats.FORMAT_AGENT.add_spec(bpch_spec_le)
-# TODO: CTM bin 4D  format
+# TODO: CTM bin 4D  format (?)
 
 # TODO: write a bpch Saver class (not a priority)
 
 
 # -----------------------------------------------------------------------------
 # Callbacks for loading cubes (various CF-related fixes)
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
-# Caches for Iris coordinate objects (save memory and CPU)
+# Init caches for Iris coordinate objects (save memory and CPU)
 _coordcache = dict()
 _coordcache2 = dict()
 
@@ -323,7 +323,7 @@ def fix_bpch2coards(cube, field, filename):
 
 # -----------------------------------------------------------------------------
 # Wrappers for Iris's main classes and load / save functions
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 class CTMField(iris.cube.Cube):
     """
@@ -350,12 +350,9 @@ class CTMField(iris.cube.Cube):
         self._diagnostic = d
 
 
-Constraint = iris.Constraint
-AttributeConstraint = iris.AttributeConstraint
-
 load = iris.load
-load_field = iris.load_cube
-load_fields = iris.load_cubes
+load_dataset = iris.load_cube
+load_datasets = iris.load_cubes
 load_raw = iris.load_raw
 
 load_callbacks = {

@@ -16,7 +16,6 @@ Also adds support for BPCH format to Iris.
 from __future__ import absolute_import
 
 import glob
-import collections
 import warnings
 import datetime
 from types import StringTypes
@@ -33,7 +32,7 @@ import iris.fileformats
 import iris.std_names
 import iris.io.format_picker as fp
 
-from pygchem import grid, diagnostics
+from pygchem import grid
 from pygchem.utils import uff
 from pygchem.io import bpch
 from pygchem.tools import irisutil, ctm2cf, timeutil
@@ -319,6 +318,15 @@ def fix_bpch2coards(cube, field, filename):
             return cube.slices(slices_dims).next()
     except iris.exceptions.CoordinateNotFoundError:
         pass
+
+
+# -----------------------------------------------------------------------------
+# Backend options
+# -----------------------------------------------------------------------------
+# TODO: make this configurable as backend options
+# TODO: use iris.unit.suppress_unit_warnings (not yet available in 1.7.2)
+warnings.filterwarnings("ignore", message=".*Invalid udunits")
+warnings.filterwarnings("ignore", message=".*invalid units")
 
 
 # -----------------------------------------------------------------------------

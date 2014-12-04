@@ -117,7 +117,7 @@ def cubes_from_bpch(filenames, callback=None, **kwargs):
 
 class LeadingLineUff(fp.FileElement):
     """
-    A :class:`FileElement` that returns the (unpacked) first line of an
+    A :class:`FileElement` child that returns the (unpacked) first line of an
     un-formatted binary Fortran file.
 
     """
@@ -322,33 +322,8 @@ def fix_bpch2coards(cube, field, filename):
 
 
 # -----------------------------------------------------------------------------
-# Wrappers for Iris's main classes and load / save functions
+# Wrappers for Iris load and save functions
 # -----------------------------------------------------------------------------
-
-class CTMField(iris.cube.Cube):
-    """
-    in development.
-
-    """
-    @property
-    def diagnostic(self):
-        """
-        A :class:`pygchem.diagnostics.CTMDiagnostic` object containing
-        the CTM diagnostic metadata.
-        """
-        return self._diagnostic
-
-    @diagnostic.setter
-    def diagnostic(self, d):
-        if not isinstance(d, diagnostics.CTMDiagnostic) and d is not None:
-            if not isinstance(d, collections.Mapping):
-                raise ValueError(
-                    "expected a 'pygchem.diagnostics.CTMDiagnostic' object"
-                    "or mappable, found '{cn}'".format(cn=d.__class__.__name__)
-                )
-            d = diagnostics.CTMDiagnostic(**d)
-        self._diagnostic = d
-
 
 load = iris.load
 load_dataset = iris.load_cube
@@ -367,10 +342,5 @@ save = iris.save
 #   - CTM metadata related to the geometry, useful because of the metadata
 #     format but duplicates the information in the cube
 #
-#   - possible solution: subclass Cube and CubeList, add specific properties
-#     that link the cube to Diagnostic object and other metadata
-#     (e.g. 'loaded_from_file', 'save_to_file'), and all functions / methods
-#     returning new cube / cubelist overridden to return the subclass
-#
-#   - other solution: 'monkey' attributes 'diagnostic', 'bpch_metadata'
-#                     plus overriding the copy method of the cube?
+#   - solution? add attributes 'diagnostic', 'bpch_metadata'
+#               and overriding the copy method of the cube?

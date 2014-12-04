@@ -18,13 +18,8 @@ from contextlib import contextmanager
 
 DEFAULT_BACKEND = 'iris'   # TODO: move this in the config module
 
-
-_backends = {
-    # 'name': 'module'
-    'iris': 'iris_backend',
-    'netcdf': 'netcdf_backend',
-    'bpch': 'bpch_backend'
-}
+# backends in failback order
+_backends = ['iris', 'netcdf', 'bpch']
 
 _current_backend = DEFAULT_BACKEND
 
@@ -33,9 +28,8 @@ def _load_backend(backend_name):
     global load, load_dataset, load_datasets, load_raw, load_callbacks, save
     global _current_backend
 
-    backend_mod = _backends.get(backend_name)
-    backend = importlib.import_module("pygchem.datafield_backends.{0}"
-                                      .format(backend_mod))
+    backend = importlib.import_module("pygchem.dataset_backends.backend_{0}"
+                                      .format(backend_name))
 
     load = backend.load
     load_dataset = backend.load_dataset
@@ -51,7 +45,7 @@ def get_available_backends():
     """
     Return a list of all available backends for dataset handling.
     """
-    return list(_backends.keys())
+    return _backends
 
 
 @contextmanager

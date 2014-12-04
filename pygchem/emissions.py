@@ -14,7 +14,7 @@ Interface to the Harvard-NASA Emissions Component (HEMCO).
 import os
 
 from pygchem import config
-from pygchem import datafields
+from pygchem import datasets
 from pygchem.io.hemco import read_hemco
 from pygchem.utils.data_structures import record_cls, RecordList
 from pygchem.utils import exceptions
@@ -184,17 +184,20 @@ def load_emission_data(emission_fields, return_data=False):
     is used to load the data fields.
 
     """
+    # TODO: make it work for any dataset backend
+    raise exceptions.NotYetImplementedError()
+
     if isinstance(emission_fields, (EmissionBase, EmissionScale, EmissionMask)):
         emission_fields = [emission_fields]
     data_fields = []
 
     # TODO: load data fields at once for emission fields with the same filename
     for efield in emission_fields:
-        constraint = datafields.Constraint(
+        constraint = datasets.Constraint(
             cube_func=lambda cube: efield.var_name == efield.var_name
         )
         if efield.filename is not None:
-            dfield = datafields.load(efield.filename, constraint)
+            dfield = datasets.load(efield.filename, constraint)
         else:
             dfield = None
         efield.datafield = dfield

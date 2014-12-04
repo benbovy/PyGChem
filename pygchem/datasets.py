@@ -7,7 +7,7 @@
 #
 
 """
-GEOS-Chem datasets I/O and manipulation using one of the available
+GEOS-Chem datasets I/O using one of the available
 backends ('iris', 'netcdf', 'bpch').
 
 """
@@ -21,6 +21,15 @@ DEFAULT_BACKEND = 'iris'   # TODO: move this in the config module
 # backends in failback order
 _backends = ['iris', 'netcdf', 'bpch']
 
+# init the dataset load/save API functions
+load = lambda *args, **kwargs: None
+load_dataset = lambda *args, **kwargs: None
+load_datasets = lambda *args, **kwargs: None
+load_raw = lambda *args, **kwargs: None
+load_callbacks = lambda *args, **kwargs: None
+save = lambda *args, **kwargs: None
+
+# init the current used backend
 _current_backend = DEFAULT_BACKEND
 
 
@@ -84,4 +93,5 @@ def set_backend(backend_name, backend_options=None, failback=True):
         _load_backend(backend2restore)
 
 
+# load the default backend
 _load_backend(DEFAULT_BACKEND)

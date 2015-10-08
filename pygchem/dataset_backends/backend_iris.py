@@ -41,6 +41,45 @@ from pygchem.tools import irisutil, ctm2cf, timeutil
 # -----------------------------------------------------------------------------
 # BPCH Support for Iris
 # -----------------------------------------------------------------------------
+def _get_datablock_dim_coords(datablock, coord_cache):
+    """
+    Get a sequence of (:class:`iris.coords.DimCoord` object, dim)
+    for `datablock`.
+
+    `coord_cache` is a dictionary serving as a cache to save
+    memory and CPU while assigning coordinates to the created iris cubes.
+
+    """
+    cache_fields = ('modelname', 'resolution', 'origin', 'shape')
+    cache_key = '_'.join((str(datablock[f]) for f in cache_fields))
+
+    if cache_key in coord_cache.keys():
+        return coord_cache[cache_key]
+
+    ctm_grid = grid.CTMGrid.from_model(datablock['modelname'],
+                                       resolution=datablock['resolution'])
+
+    if datablock['origin'] != (1, 1, 1):
+        og, sp = leading_datablock['origin'], leading_datablock['shape']
+        sp3 = np.pad(sp, (0, len(og) - len(sp)), 'constant')
+        imin = np.array(og) - 1
+        imax = imin + np.array(sp3)
+        region_box = zip(imin, imax)
+    else:
+        region_box = None
+
+    lon, lat, lev = irisutil.coord_from_grid(ctm_grid,
+                                             region_box=region_box)
+
+    if len(datablock['shape']) == 2:
+        dim_coords = [(lon, 0), (lat, 1)]
+    else:
+        dim_coords = [(lon, 0), (lat, 1), (lev, 2)]
+
+    coord_cache[cache_key] = dim_coords
+
+    return dim_coords
+
 
 def cubes_from_bpch(filenames, callback=None, **kwargs):
     """
@@ -62,36 +101,18 @@ def cubes_from_bpch(filenames, callback=None, **kwargs):
     The resultant cubes may not be in the same order as in the files.
 
     """
+    coord_cache = dict()   # init coordinates cache
+
     if isinstance(filenames, StringTypes):
         filenames = [filenames]
 
     for filename in filenames:
         for path in glob.glob(filename):
-            
+
             filetype, filetitle, datablocks = bpch.read_bpch(path, **kwargs)
-                
-            # assume that CTM Grid is the same for all datablocks
-            # (compute coordinates once per file to save CPU/memory).
-            leading_datablock = datablocks[0]
-            ctm_grid = grid.CTMGrid.from_model(
-                leading_datablock['modelname'],
-                resolution=leading_datablock['resolution']
-            )
-            if leading_datablock['origin'] != (1, 1, 1):
-                imin = np.array(leading_datablock['origin']) - 1
-                imax = imin + np.array(leading_datablock['shape'])
-                region_box = zip(imin, imax)
-            else:
-                region_box = None
-            lon, lat, lev = irisutil.coord_from_grid(ctm_grid,
-                                                     region_box=region_box)
 
             for datablock in datablocks:
-
-                if len(datablock['shape']) == 2:
-                    dim_coords = [(lon, 0), (lat, 1)]
-                else:
-                    dim_coords = [(lon, 0), (lat, 1), (lev, 2)]  # 3D default
+                dim_coords = _get_datablock_dim_coords(datablock, coord_cache)
 
                 cube = irisutil._datablock_to_cube(
                     datablock,

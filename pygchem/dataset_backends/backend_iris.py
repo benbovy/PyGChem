@@ -60,10 +60,10 @@ def _get_datablock_dim_coords(datablock, coord_cache):
                                        resolution=datablock['resolution'])
 
     if datablock['origin'] != (1, 1, 1):
-        og, sp = leading_datablock['origin'], leading_datablock['shape']
-        sp3 = np.pad(sp, (0, len(og) - len(sp)), 'constant')
-        imin = np.array(og) - 1
-        imax = imin + np.array(sp3)
+        origin, shape = datablock['origin'], datablock['shape']
+        shape3 = np.pad(shape, (0, len(origin) - len(shape)), 'constant')
+        imin = np.array(origin) - 1
+        imax = imin + np.array(shape3)
         region_box = zip(imin, imax)
     else:
         region_box = None

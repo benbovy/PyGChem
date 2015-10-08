@@ -4,7 +4,7 @@
 #
 # Copyright (C) 2013-2014 Benoit Bovy
 #
-# This module is partially based on the transcription of the IDL modules 
+# This module is partially based on the transcription of the IDL modules
 # `ctm_model.pro` and `ctm_grid.pro` of the GAMAP2 software (Martin Schultz,
 # Bob Yantosca and Philippe Le Sager, Harvard University).
 #
@@ -35,7 +35,7 @@ class CTMGrid(object):
         Name of the model. If it is one of the supported models,
         (see :class:`CTMGrid`.supported_models), it is better to use
         :class:`CTMGrid`.from_model or :class:`CTMGrid`.copy_from_model
-        to set-up the grid with appropriate parameter values. 
+        to set-up the grid with appropriate parameter values.
     resolution : (float, float)
         Horizontal grid resolution (lon, lat) or (DI, DJ) [degrees]
         (default: (5, 4))
@@ -72,7 +72,7 @@ class CTMGrid(object):
     csig, esig : 1-d array_like
         Pre-defined sigma coordinates the centers and the bottom edges of
         the vertical grid, if pure sigma.
-    
+
     Attributes
     ----------
     Attributes are the same than the parameters above, except `model_name`
@@ -115,15 +115,15 @@ class CTMGrid(object):
         self._pressure_centers = None
         self._altitude_edges = None
         self._altitude_centers = None
-        
+
         for k, v in kwargs.items():
             self.__setattr__(k, v)
-    
+
     @classmethod
     def from_model(cls, model_name, **kwargs):
         """
         Define a grid using the specifications of a given model.
-        
+
         Parameters
         ----------
         model_name : string
@@ -133,38 +133,38 @@ class CTMGrid(object):
         **kwargs : string
             Parameters that override the model  or default grid
           settings (See Other Parameters below).
-        
+
         Returns
         -------
         A :class:`CTMGrid` object.
-        
+
         Other Parameters
         ----------------
         resolution : (float, float)
             Horizontal grid resolution (lon, lat) or (DI, DJ) [degrees]
         Psurf : float
             Average surface pressure [hPa] (default: 1013.15)
-        
+
         Notes
         -----
         Regridded vertical models may have several valid names (e.g.,
         'GEOS5_47L' and 'GEOS5_REDUCED' refer to the same model).
-        
+
         """
         settings = gridspec.get_model_info(model_name)
         model = settings.pop('model_name')
         for k, v in kwargs.items():
             if k in ('resolution', 'Psurf'):
                 settings[k] = v
-        
+
         return cls(model, **settings)
-    
+
     @classmethod
     def copy_from_model(cls, model_name, reference, **kwargs):
         """
         Set-up a user-defined grid using specifications of a reference
         grid model.
-        
+
         Parameters
         ----------
         model_name : string
@@ -175,11 +175,11 @@ class CTMGrid(object):
         **kwargs
             Any set-up parameter which will override the settings of the
             reference model (see :class:`CTMGrid` parameters).
-        
+
         Returns
         -------
         A :class:`CTMGrid` object.
-        
+
         """
         if isinstance(reference, cls):
             settings = reference.__dict__.copy()
@@ -187,20 +187,20 @@ class CTMGrid(object):
         else:
             settings = gridspec.get_model_info(reference)
             settings.pop('model_name')
-        
+
         settings.update(kwargs)
         settings['reference'] = reference
-        
+
         return cls(model_name, **settings)
-    
+
     @property
     def lonlat_edges(self):
         """
         lon/lat coordinates of the edges of the grid boxes [degrees].
-        
+
         Returns
         -------
-        lon, lat : 1-d array_like 
+        lon, lat : 1-d array_like
         """
         if self._lonlat_edges is None:
             self._compute_lonlat()
@@ -209,35 +209,35 @@ class CTMGrid(object):
     @lonlat_edges.setter
     def lonlat_edges(self, value):
         self._lonlat_edges = value
-    
+
     @property
     def lonlat_centers(self):
         """
         lon/lat coordinates of the centers of the grid boxes [degrees].
-        
+
         Returns
         -------
         lon, lat : 1-d array_like
         """
         if self._lonlat_centers is None:
-            self._compute_lonlat() 
+            self._compute_lonlat()
         return self._lonlat_centers
 
     @lonlat_centers.setter
-    def lonlat_centers(self, value):    
+    def lonlat_centers(self, value):
         self._lonlat_centers = value
-    
+
     def _compute_lonlat(self):
         """
         Compute lon/lat coordinates for grid edges and centers.
-        
+
         """
         rlon = self.resolution[0]
         rlat = self.resolution[1]
-        
+
         Nlon = int(360. / rlon)
         Nlat = int(180. / rlat) + self.halfpolar
-        
+
         elon = np.arange(Nlon + 1) * rlon - np.array(180.)
         elon -= rlon / 2. * self.center180
         elat = np.arange(Nlat + 1) * rlat - np.array(90.)
@@ -247,22 +247,22 @@ class CTMGrid(object):
 
         clon = (elon - rlon / 2.)[1:]
         clat = np.arange(Nlat) * rlat - np.array(90.)
-            
+
         if self.halfpolar:                        # Fix grid boundaries
             clat[0] = (elat[0] + elat[1]) / 2.
             clat[-1] = - clat[0]
         else:
             clat += (elat[1] - elat[0]) / 2.
-            
+
         self._lonlat_centers = (clon, clat)
         self._lonlat_edges = (elon, elat)
-        
+
     @property
     def eta_edges(self):
         """
         ETA Coordinates of the bottom edges of the vertical hybrid grid
         [unitless].
-        
+
         See Also
         --------
         get_layers : if not set by user, values are calculated using this
@@ -274,14 +274,14 @@ class CTMGrid(object):
         return self._eta_edges
 
     @eta_edges.setter
-    def eta_edges(self, value):    
+    def eta_edges(self, value):
         self._eta_edges = value
-    
+
     @property
     def eta_centers(self):
         """
         ETA Coordinates of the centers of the vertical hybrid grid [unitless].
-        
+
         See Also
         --------
         get_layers : if not set by user, values are calculated using this
@@ -293,14 +293,14 @@ class CTMGrid(object):
         return self._eta_centers
 
     @eta_centers.setter
-    def eta_centers(self, value):    
+    def eta_centers(self, value):
         self._eta_centers = value
-    
+
     @property
     def sigma_edges(self):
         """
         Sigma coordinates of the vertical grid bottom edges [unitless].
-        
+
         See Also
         --------
         get_layers : if not set by user, values are calculated using this
@@ -312,14 +312,14 @@ class CTMGrid(object):
         return self._sigma_edges
 
     @sigma_edges.setter
-    def sigma_edges(self, value):    
+    def sigma_edges(self, value):
         self._sigma_edges = value
-    
+
     @property
     def sigma_centers(self):
         """
         Sigma coordinates of the vertical grid centers [unitless].
-        
+
         See Also
         --------
         get_layers : if not set by user, values are calculated using this
@@ -331,14 +331,14 @@ class CTMGrid(object):
         return self._sigma_centers
 
     @sigma_centers.setter
-    def sigma_centers(self, value):    
+    def sigma_centers(self, value):
         self._sigma_centers = value
-    
+
     @property
     def pressure_edges(self):
         """
         Air pressure at the vertical grid bottom edges [hPa].
-        
+
         See Also
         --------
         get_layers : if not set by user, values are calculated using this
@@ -346,18 +346,18 @@ class CTMGrid(object):
         """
         if self._pressure_edges is None:
             self._pressure_edges = self.get_layers(var='pressure',
-                                                   pos='edges') 
+                                                   pos='edges')
         return self._pressure_edges
 
     @pressure_edges.setter
-    def pressure_edges(self, value):    
+    def pressure_edges(self, value):
         self._pressure_edges = value
-    
+
     @property
     def pressure_centers(self):
         """
         Air pressure at the vertical grid centers [hPa].
-        
+
         See Also
         --------
         get_layers : if not set by user, values are calculated using this
@@ -365,18 +365,18 @@ class CTMGrid(object):
         """
         if self._pressure_centers is None:
             self._pressure_centers = self.get_layers(var='pressure',
-                                                     pos='centers') 
+                                                     pos='centers')
         return self._pressure_centers
 
     @pressure_centers.setter
-    def pressure_centers(self, value):    
+    def pressure_centers(self, value):
         self._pressure_centers = value
-    
+
     @property
     def altitude_edges(self):
         """
         Altitude at the vertical grid bottom edges.
-        
+
         See Also
         --------
         get_layers : if not set by user, values are calculated using this
@@ -384,18 +384,18 @@ class CTMGrid(object):
         """
         if self._altitude_edges is None:
             self._altitude_edges = self.get_layers(var='altitude',
-                                                   pos='edges') 
+                                                   pos='edges')
         return self._altitude_edges
 
     @altitude_edges.setter
-    def altitude_edges(self, value):    
+    def altitude_edges(self, value):
         self._altitude_edges = value
-    
+
     @property
     def altitude_centers(self):
         """
         Altitude at the vertical grid centers.
-        
+
         See Also
         --------
         get_layers : if not set by user, values are calculated using this
@@ -403,18 +403,18 @@ class CTMGrid(object):
         """
         if self._altitude_centers is None:
             self._altitude_centers = self.get_layers(var='altitude',
-                                                     pos='centers') 
+                                                     pos='centers')
         return self._altitude_centers
 
     @altitude_centers.setter
-    def altitude_centers(self, value):    
+    def altitude_centers(self, value):
         self._altitude_centers = value
-    
+
     def get_layers(self, var, pos='edges', Psurf=None, Ptop=None,
                    **kwargs):
         """
         Compute scalars or coordinates associated to the vertical layers.
-        
+
         Parameters
         ----------
         var : {'pressure', 'altitude', 'eta', 'sigma'}
@@ -428,27 +428,27 @@ class CTMGrid(object):
             Air pressure at the top of the modeled atmosphere [hPa]. If None,
             the value from the `Ptop` attribute of the :class:`CTMGrid`
             instance is used.
-        
+
         Returns
         -------
         1-d, 2-d or 3-d array-like (the number of dimensions equals the number
         of dimensions of Psurf + 1). The first dimension of the returned
         array correspond to the vertical grid ordered bottom-up.
-        
+
         Units are [hPa] for pressure, [km] for altitudes and [unitless] for
         eta and sigma coordinates.
-        
+
         Returns None if `var` is not available (e.g., sigma coordinates for
         hybrid models or eta coordinates for pure sigma models) or if the
         `Nlayers` attribute of the :class:`CTMGrid` instance is None.
-        
+
         Other Parameters
         ----------------
         Pcoef : array-like
             Coefficients of the polynomial used to get altitude values from
             pressure values (default values are for the US Standard
             Atmosphere).
-        
+
         See Also
         --------
         eta_edges, eta_centers : Return ETA coordinates for
@@ -461,20 +461,20 @@ class CTMGrid(object):
             grid types.
         prof_altitudes (:mod:pygchem.tools.`atm`) : Return altitude
             for given pressure.
-        
+
         Notes
         -----
         For pure sigma grids, sigma coordinates are given by the :attr:`esig`
         (edges) and :attr:`csig` (centers) attributes of the :class:`CTMGrid`
         instance.
-        
+
         For both pure sigma and hybrid grids, pressures at layers edges `L` are
-        calculated as follows: 
-        
+        calculated as follows:
+
         .. math:: P_e(L) = A_p(L) + B_p(L) * (P_{surf} - C_p)
-        
+
         where
-        
+
         :math:`P_{surf}`, :math:`P_{top}`
             Air pressures at the surface and the top of the modeled atmosphere
             (:attr:`Psurf` and :attr:`Ptop` attributes of the :class:`CTMGrid`
@@ -486,40 +486,40 @@ class CTMGrid(object):
         :math:`Cp(L)`
             equals :math:`P_{top}` for pure sigma grids or equals 0 for hybrid
             grids.
-        
+
         Pressures at grid centers are averages of pressures at grid edges:
-        
+
         .. math:: P_c(L) = (P_e(L) + P_e(L+1)) / 2
-        
+
         For hybrid grids, ETA coordinates of grid edges and grid centers are
         given by;
-        
+
         .. math:: ETA_{e}(L) = (P_e(L) - P_{top}) / (P_{surf} - P_{top})
         .. math:: ETA_{c}(L) = (P_c(L) - P_{top}) / (P_{surf} - P_{top})
-        
+
         Altitude values are given using the
         :func:`pygchem.tools.atm.prof_altitudes` function.
-        
+
         Examples
         --------
         TODO:
-        
+
         """
         if self.Nlayers is None:
             return None
-        
+
         if Psurf is None:
             Psurf = self.Psurf
         if Ptop is None:
             Ptop = self.Ptop
-        
+
         Psurf = np.asarray(Psurf)
         output_ndims = Psurf.ndim + 1
         if output_ndims > 3:
             raise ValueError("`Psurf` argument must be a float or an array"
                              " with <= 2 dimensions (or None)")
-        
-        # compute all variables: takes not much memory, fast 
+
+        # compute all variables: takes not much memory, fast
         # and better for code reading
         SIGe = None
         SIGc = None
@@ -536,25 +536,25 @@ class CTMGrid(object):
         else:
             try:
                 Bp = SIGe = broadcast_1d_array(self.esig, output_ndims)
-                SIGc = broadcast_1d_array(self.csig, output_ndims)   
+                SIGc = broadcast_1d_array(self.csig, output_ndims)
             except AttributeError:
                 raise AttributeError("Impossible to compute vertical levels,"
                                      " data is missing (esig, csig)")
             Ap = Cp = Ptop
-        
+
         Pe = Ap + Bp * (Psurf - Cp)
         Pc = 0.5 * (Pe[0:-1] + Pe[1:])
-        
+
         if self.hybrid:
             ETAe = (Pe - Ptop) / (Psurf - Ptop)
             ETAc = (Pc - Ptop) / (Psurf - Ptop)
         else:
             SIGe = SIGe * np.ones_like(Psurf)
             SIGc = SIGc * np.ones_like(Psurf)
-        
+
         Ze = atm.prof_altitude(Pe, **kwargs)
         Zc = atm.prof_altitude(Pc, **kwargs)
-        
+
         all_vars = {'eta_edges': ETAe,
                     'eta_centers': ETAc,
                     'sigma_edges': SIGe,
@@ -563,7 +563,7 @@ class CTMGrid(object):
                     'pressure_centers': Pc,
                     'altitude_edges': Ze,
                     'altitude_centers': Zc}
-        
+
         try:
             return all_vars["_".join((var, pos))]
         except KeyError:

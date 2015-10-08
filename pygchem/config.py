@@ -4,7 +4,7 @@
 #
 # Copyright (C) 2012-2014 Benoit Bovy.
 # see license.txt for more details
-# 
+#
 #
 
 """

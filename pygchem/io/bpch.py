@@ -103,7 +103,7 @@ def read_bpch(filename, mode='rb', skip_data=True,
     **kwargs
         extra parameters passed to :class:`pygchem.utils.uff.FortranFile`
         (e.g., `endian`).
-    
+
     Returns
     -------
     filetype

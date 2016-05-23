@@ -174,7 +174,7 @@ def read_bpch(filename, mode='rb', skip_data=True,
             file_position = bpch_file.tell()
             if skip_data:
                 bpch_file.skipline()
-                data = BPCHDataProxy(data_shape, 'f',
+                data = BPCHDataProxy(data_shape, np.dtype('f'),
                                      from_file, bpch_file.endian,
                                      file_position, diag['scale'], np.nan)
             else:

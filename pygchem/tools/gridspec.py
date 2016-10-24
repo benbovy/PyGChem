@@ -480,6 +480,9 @@ MODELS = {
     'MERRA_47L': {'reference': 'GEOS5_47L',
                   'description': 'MERRA hybrid reduced'},
     'MERRA_REDUCED': {'reference': 'MERRA_47L'},
+    'MERRA2': {'reference': 'GEOSFP',
+              'description': 'MERRA2 hybrid'},
+    'MERRA2_47L': {'reference': 'GEOS5_47L'},
 }
 
 
